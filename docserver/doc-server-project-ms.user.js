@@ -5,7 +5,7 @@
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
 // @include     http://doc-server/*
-// @require     https:://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
+// @require     https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
 // @updateURL   https://github.com/maxint/userjs/docserver/doc-server-project-ms.user.js
 // @downloadURL https://github.com/maxint/userjs/docserver/doc-server-project-ms.user.js
 // @Note        
