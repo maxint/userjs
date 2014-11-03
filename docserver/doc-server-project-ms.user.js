@@ -49,7 +49,6 @@ function withjQuery(callback, safe){
 
 // the guts of this userscript
 withjQuery(function($, window) {
-    return
     // replace main menu [Project]
     $('li#mainMenuItem_150000 a').attr('href', '/projectManage/ProjectList.asp');
 
