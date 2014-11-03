@@ -8,7 +8,11 @@
 // @require     https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
 // @updateURL   https://github.com/maxint/userjs/docserver/doc-server-project-ms.user.js
 // @downloadURL https://github.com/maxint/userjs/docserver/doc-server-project-ms.user.js
-// @Note        
+// @Note        Features:
+//              - 首页 | “项目” 导航到 “项目跟踪”
+//              - “项目跟踪”页面添加 "Release"
+//              - "Add Release Package" 窗口：自动填写日期，根据Release
+//                Package填写Version，自动查询Related Project名称。
 // ==/UserScript==
 
 // a function that loads jQuery and calls a callback function when jQuery has finished loading
@@ -78,10 +82,12 @@ withjQuery(function($, window) {
                 //console.log(vers);
             }
         });
-        tds.eq(5).find('input:first').change(function(){
+        tds.eq(5).find('input:first').keyup(function(){
             var val = $(this).val();
-            var url = '../ProjectDelivery/delivery_releated_project_list.asp?projid=' + val
-            tds.eq(5).find('div.info').load(url + ' td:nth-child(2)')
+            if (/\d{4}/.match(val)) {
+                var url = '../ProjectDelivery/delivery_releated_project_list.asp?projid=' + val
+                tds.eq(5).find('div.info').load(url + ' td:nth-child(2)')
+            }
         });
         // get release packages
         //tds.css('background-color', 'red');
