@@ -5,7 +5,6 @@
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
 // @include     http://doc-server/*
-// @require     https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js
 // @updateURL   https://github.com/maxint/userjs/docserver/doc-server-project-ms.user.js
 // @downloadURL https://github.com/maxint/userjs/docserver/doc-server-project-ms.user.js
 // @Note        Features:
@@ -39,8 +38,10 @@ function withjQuery(callback, safe){
         }
         document.head.appendChild(script);
     } else {
+        console.log('Using jquery ' + jQuery().jquery);
         setTimeout(function() {
             //Firefox supports
+            console.log('Runing custom script');
             callback(jQuery, typeof unsafeWindow === "undefined" ? window : unsafeWindow);
         }, 30);
     }
@@ -48,6 +49,7 @@ function withjQuery(callback, safe){
 
 // the guts of this userscript
 withjQuery(function($, window) {
+    return
     // replace main menu [Project]
     $('li#mainMenuItem_150000 a').attr('href', '/projectManage/ProjectList.asp');
 
@@ -78,15 +80,16 @@ withjQuery(function($, window) {
                 vers = /(\d+)\.(\d+)\.(\d+)/g.exec(val);
             }
             if (vers) {
-                tds.eq(2).find('input:first').val('v' + [vers[1], vers[2], vers[3]].join('.'))
-                //console.log(vers);
+                tds.eq(2).find('input:first').val('v' + [vers[1], vers[2], vers[3]].join('.'));
             }
         });
         tds.eq(5).find('input:first').keyup(function(){
             var val = $(this).val();
-            if (/\d{4}/.match(val)) {
-                var url = '../ProjectDelivery/delivery_releated_project_list.asp?projid=' + val
-                tds.eq(5).find('div.info').load(url + ' td:nth-child(2)')
+            if (/^[0-9]{4}$/.test(val)) {
+                var url = '../ProjectDelivery/delivery_releated_project_list.asp?projid=' + val;
+                tds.eq(5).find('div.info').load(url + ' td:nth-child(2)');
+            } else {
+                tds.eq(5).find('div.info').html('<font color="#FF0000">No project found</font>');
             }
         });
         // get release packages
