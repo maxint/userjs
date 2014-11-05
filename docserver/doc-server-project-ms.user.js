@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     0.0.2
+// @version     0.0.3
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -8,8 +8,11 @@
 // @updateURL   https://github.com/maxint/userjs/docserver/doc-server-project-ms.user.js
 // @downloadURL https://github.com/maxint/userjs/docserver/doc-server-project-ms.user.js
 // @Note
+// v0.0.3
+//  - Add "Invert Rows" button to "Release List" page.
+//
 // v0.0.2
-//  - "Add Rlease" 窗口自动保存表单
+//  - Auto save data in "Add Rlease" form.
 //
 // v0.0.1
 //  - 首页 | “项目” 导航到 “项目跟踪”
@@ -31,13 +34,13 @@ function withjQuery(callback, safe) {
             var cb = document.createElement("script");
             cb.type = "text/javascript";
             cb.textContent = "jQuery.noConflict();(" + callback.toString() + ")(jQuery, window);";
-            script.addEventListener('load', function() {
+            script.addEventListener('load', function(){
                 document.head.appendChild(cb);
             });
         } else {
             var dollar = undefined;
             if (typeof($) != "undefined") dollar = $;
-            script.addEventListener('load', function() {
+            script.addEventListener('load', function(){
                 jQuery.noConflict();
                 $ = dollar;
                 callback(jQuery, window);
@@ -46,7 +49,7 @@ function withjQuery(callback, safe) {
         document.head.appendChild(script);
     } else {
         console.log('Using jquery ' + jQuery().jquery);
-        setTimeout(function() {
+        setTimeout(function(){
             //Firefox supports
             console.log('Runing custom script');
             callback(jQuery, typeof(unsafeWindow) == "undefined" ? window : unsafeWindow);
@@ -68,17 +71,34 @@ withjQuery(function($, window) {
     $('li#mainMenuItem_150000 a').attr('href', '/projectManage/ProjectList.asp');
 
     // operate w.r.t. sub path
-    var subpath = window.location.pathname
+    var subpath = window.location.pathname.split('?')[0]
+    console.log(subpath);
     if (subpath == '/projectManage/ProjectList.asp') {
         console.log('ProjectList');
         var trs = $('table.ListTable tbody tr');
         trs.first().find('th:nth-child(2)').after('<th>Operations</th>');
-        trs.nextAll().each(function() {
+        trs.nextAll().each(function(){
             var id = $(this).find('td:first a:first').text();
             var rlsUrl = 'ProjectOther/ReleaseList.asp?proj_id=' + id
             var link = '<a href="' + rlsUrl + '">Release</a>'
             $(this).find('td:nth-child(2)').after('<td>' + link + '</td>');
         });
+    } else if (subpath == '/projectManage/ProjectOther/ReleaseList.asp') {
+        console.log('ReleaseList');
+        // invert table row
+        btn = $('<input type="button" value="Invert Rows"/>');
+        //btn.appendTo($("body"));
+        btn.insertBefore($("input[type='button']"));
+        btn.click(function(){
+            $('table.ResultTable tbody').each(function(elem, index){
+                var arr = $.makeArray($("tr", this).detach());
+                var th = arr.shift();
+                arr.reverse();
+                arr.unshift(th);
+                $(this).append(arr);
+            });
+        });
+        btn.click();
     } else if (subpath == '/projectManage/ProjectOther/addRelease.asp') {
         console.log('addRelease');
         // date
@@ -88,11 +108,11 @@ withjQuery(function($, window) {
         $('input#txtDeliveryPackage').change(function(){
             var val = $(this).val();
             var vers = /(\d+)\.(\d+)\.\d+\.(\d+)/g.exec(val);
-            if (vers == null) {
+            if (vers == null)
                 vers = /(\d+)\.(\d+)\.(\d+)/g.exec(val);
-            }
             if (vers) {
-                $("input[name='txtVersion']").val('v' + [vers[1], vers[2], vers[3]].join('.'));
+                vstr = 'v' + [vers[1], vers[2], vers[3]].join('.')
+                $("input[name='txtVersion']").val(vstr);
             }
         }).val(deserialize('release.package', '')).css({
             'width': '100%',
@@ -123,7 +143,7 @@ withjQuery(function($, window) {
         // debug
         console.log(localStorage);
         // save result when submit
-        $('#form1').change(function() {
+        $('#form1').change(function(){
             serialize('release.relatedProjectID', $("input[name='txtReleaseReleatedProject']").val());
             serialize('release.note', $('textarea#txtNotes').val());
             serialize('release.package', $('input#txtDeliveryPackage').val());
