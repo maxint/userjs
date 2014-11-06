@@ -238,52 +238,50 @@ withjQuery(function($, window) {
                           '<td class="projIdName">' + val['name'] + '</td>' +
                           '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
                     }
-                }).find('input#delID').click(function(){
-                    var id = $(this).parent().prev().prev().text();
-                    idmgr.remove(id);
-                });
-                table.find('td.projIdName').click(function(){
-                    if ($(this).find('input').length) return;
-                    var oldval = $(this).text();
-                    $(this).addClass('cellEditing');
-                    $(this).empty();
-                    var input = $('<input type="text", value="' + oldval + '"/>');
-                    input.appendTo($(this)).focus().keypress(function(e){
-                        if (e.which == 13) {
-                            // enter
-                            var id = $(this).parent().prev().text();
-                            var newval = $(this).val();
-                            $(this).parent().text(newval);
-                            idmgr.set(id, newval);
-                        }
-                    }).blur(function(){
-                        $(this).parent().text(oldval);
-                    }).css({
-                        width: '100%',
-                    });
-                });
-                table.find('td.projId').click(function(){
-                    var id = $(this).text();
-                    $("input[name='txtReleaseReleatedProject']").val(id).keyup();
                 });
             }).load();
-            var addID = function(){
-                var id = table.find('input#inputID').val();
-                var name = table.find('td#inputIDtxt').text();
-                if (id && name) {
-                    idmgr.add(id, name);
-                }
-            };
+            table.find('tbody').delegate('input#delID', 'click', function(){
+                var id = $(this).parent().prev().prev().text();
+                idmgr.remove(id);
+            }).delegate('td.projIdName', 'click', function(){
+                if ($(this).find('input').length) return;
+                var oldval = $(this).text();
+                $(this).addClass('cellEditing');
+                $(this).empty();
+                var input = $('<input type="text", value="' + oldval + '"/>');
+                input.appendTo($(this)).focus().keypress(function(e){
+                    if (e.which == 13) {
+                        // enter
+                        var id = $(this).parent().prev().text();
+                        var newval = $(this).val();
+                        $(this).parent().text(newval);
+                        idmgr.set(id, newval);
+                    }
+                }).blur(function(){
+                    $(this).parent().text(oldval);
+                }).css({
+                    width: '100%',
+                });
+            }).delegate('td.projId', 'click', function(){
+                var id = $(this).text();
+                $("input[name='txtReleaseReleatedProject']").val(id).keyup();
+            });
             table.find('input#inputID').keyup(function(e){
                 if (e.which == 13) {
-                    addID();
+                    $(this).parent().nextAll().find('input#addID').click();
                     return;
                 }
                 idmgr.check($(this).val(), function(name){
                     table.find('td#inputIDtxt').text(name || '');
                 });
             });
-            table.find('input#addID').click(addID);
+            table.find('input#addID').click(function(){
+                var id = table.find('input#inputID').val();
+                var name = table.find('td#inputIDtxt').text();
+                if (id && name) {
+                    idmgr.add(id, name);
+                }
+            });
             table.find('input#flushIDs').click(function(){
                 idmgr.clear();
             });
