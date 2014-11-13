@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     0.0.3
+// @version     0.0.6
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -8,6 +8,12 @@
 // @updateURL   https://github.com/maxint/userjs/docserver/doc-server-project-ms.user.js
 // @downloadURL https://github.com/maxint/userjs/docserver/doc-server-project-ms.user.js
 // @Note
+// v0.0.6
+//  - Fix bug of date format.
+//
+// v0.0.5
+//  - Login page: login when press <Enter> in password input.
+//
 // v0.0.4
 //  - Add management of "Related Projects".
 //
@@ -94,7 +100,13 @@ withjQuery(function($, window) {
 
     // operate w.r.t. sub path
     var subpath = window.location.pathname.split('?')[0]
-    if (subpath == '/index2014/index.asp') {
+    if (subpath == '/login.asp') {
+        $('input#password').keyup(function(e){
+            if (e.which == 13) {
+                $('input[value="Login"]').click();
+            }
+        });
+    } else if (subpath == '/index2014/index.asp') {
         console.log('Index2014');
         redirectToProjectListPage($('div#headerTopDiv div a:nth-child(2)'));
     } else if (subpath == '/projectManage/ProjectList.asp') {
@@ -193,7 +205,7 @@ withjQuery(function($, window) {
         var idmgr = new IDManager(istore);
         // date
         var d = new Date();
-        $('input#txtDate').val(d.getFullYear() + '/' + d.getMonth() + '/' + d.getDay());
+        $('input#txtDate').val(d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate());
         // release package
         $('input#txtDeliveryPackage').change(function(){
             var val = $(this).val();
