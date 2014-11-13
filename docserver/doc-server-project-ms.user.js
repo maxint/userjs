@@ -1,13 +1,17 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     0.0.6
+// @version     0.0.7
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
 // @include     http://doc-server/*
-// @updateURL   https://github.com/maxint/userjs/docserver/doc-server-project-ms.user.js
-// @downloadURL https://github.com/maxint/userjs/docserver/doc-server-project-ms.user.js
+// @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
+// @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @Note
+// v0.0.7
+//  - Update @updateURL and @downloadURL.
+//  - Add support for "Edit" in "Add Release Page".
+//
 // v0.0.6
 //  - Fix bug of date format.
 //
@@ -99,7 +103,7 @@ withjQuery(function($, window) {
     redirectToProjectListPage($('li#mainMenuItem_150000 a'));
 
     // operate w.r.t. sub path
-    var subpath = window.location.pathname.split('?')[0]
+    var subpath = window.location.pathname;
     if (subpath == '/login.asp') {
         $('input#password').keyup(function(e){
             if (e.which == 13) {
@@ -135,7 +139,8 @@ withjQuery(function($, window) {
             });
         });
         btn.click();
-    } else if (subpath == '/projectManage/ProjectOther/addRelease.asp') {
+    } else if (subpath == '/projectManage/ProjectOther/addRelease.asp' &&
+               window.location.search.indexOf('IdentityID=') == -1) {
         console.log('addRelease');
         var istore = new IStorage('addRelease');
         // related project IDs
