@@ -1,13 +1,19 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     0.0.7
+// @version     0.0.8
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
 // @include     http://doc-server/*
 // @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
+// @grant       none
 // @Note
+// v0.0.8
+//  - Add partial auto fill support for "Edit" window.
+//  - Add message alert when flushing project IDs.
+//  - Fix bug of "Invert Rows" caused by web page update.
+//
 // v0.0.7
 //  - Update @updateURL and @downloadURL.
 //  - Add support for "Edit" in "Add Release Page".
@@ -130,7 +136,7 @@ withjQuery(function($, window) {
         //btn.appendTo($("body"));
         btn.insertBefore($("input[type='button']"));
         btn.click(function(){
-            $('table.ResultTable tbody').each(function(elem, index){
+            $('table.ListTable tbody').each(function(elem, index){
                 var arr = $.makeArray($("tr", this).detach());
                 var th = arr.shift();
                 arr.reverse();
@@ -139,8 +145,7 @@ withjQuery(function($, window) {
             });
         });
         btn.click();
-    } else if (subpath == '/projectManage/ProjectOther/addRelease.asp' &&
-               window.location.search.indexOf('IdentityID=') == -1) {
+    } else if (subpath == '/projectManage/ProjectOther/addRelease.asp') {
         console.log('addRelease');
         var istore = new IStorage('addRelease');
         // related project IDs
@@ -208,9 +213,32 @@ withjQuery(function($, window) {
             };
         };
         var idmgr = new IDManager(istore);
-        // date
-        var d = new Date();
-        $('input#txtDate').val(d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate());
+        // fill previous data
+        if (window.location.search.indexOf('IdentityID=') == -1) {
+            // date
+            var d = new Date();
+            $('input#txtDate').val(d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate());
+            // version
+            $("input[name='txtVersion']").val(istore.get('version'));
+            // release path
+            $('input#txtReleasePath').val(istore.get('releasepath'));
+            // related package
+            $('input#txtDeliveryPackage').val(istore.get('package'));
+            // related project
+            $("input[name='txtReleaseReleatedProject']").val(istore.get('relatedProjectID'));
+            // note
+            $('textarea#txtNotes').val(istore.get('note'));
+            // save result before close window
+            $(window).unload(function(){
+                console.log('window closing');
+                istore.set('relatedProjectID', $("input[name='txtReleaseReleatedProject']").val());
+                istore.set('note', $('textarea#txtNotes').val());
+                istore.set('package', $('input#txtDeliveryPackage').val());
+                istore.set('releasepath', $('input#txtReleasePath').val());
+                istore.set('version', $("input[name='txtVersion']").val());
+                idmgr.save();
+            });
+        }
         // release package
         $('input#txtDeliveryPackage').change(function(){
             var val = $(this).val();
@@ -221,15 +249,13 @@ withjQuery(function($, window) {
                 vstr = 'v' + [vers[1], vers[2], vers[3]].join('.')
                 $("input[name='txtVersion']").val(vstr);
             }
-        }).val(istore.get('package')).css({
+        }).css({
             'width': '100%',
         });
-        $('input#txtReleasePath').val(istore.get('releasepath')).css({
+        $('input#txtReleasePath').css({
             'width': '100%',
         });
-        $("input[name='txtVersion']").val(istore.get('version'));
-        // related project
-        // create table
+        // related project table
         $(function(){
             var table = $('<table>' +
                           '<thead><tr><td style="width:40px">ID</td><td>Name</td><td style="width:60px">Operation</td></tr></thead>' +
@@ -300,7 +326,9 @@ withjQuery(function($, window) {
                 }
             });
             table.find('input#flushIDs').click(function(){
-                idmgr.clear();
+                if (confirm('Delete all project IDs?')) {
+                    idmgr.clear();
+                }
             });
         });
         $("input[name='txtReleaseReleatedProject']").keyup(function(){
@@ -312,21 +340,11 @@ withjQuery(function($, window) {
                 else
                     msgdiv.html('<font color="#FF0000">No project found</font>');
             });
-        }).val(istore.get('relatedProjectID')).keyup();
+        }).keyup();
         // notes
-        $('textarea#txtNotes').val(istore.get('note')).css({
+        $('textarea#txtNotes').css({
             width: '100%',
             height: '80px',
-        });
-        // save result before close window
-        $(window).unload(function(){
-            console.log('window closing');
-            istore.set('relatedProjectID', $("input[name='txtReleaseReleatedProject']").val());
-            istore.set('note', $('textarea#txtNotes').val());
-            istore.set('package', $('input#txtDeliveryPackage').val());
-            istore.set('releasepath', $('input#txtReleasePath').val());
-            istore.set('version', $("input[name='txtVersion']").val());
-            idmgr.save();
         });
     }
 }, true);
