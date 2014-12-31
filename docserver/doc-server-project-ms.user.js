@@ -1,14 +1,19 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     0.0.8
+// @version     0.0.9
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
 // @include     http://doc-server/*
+// @include     https://doc-server/*
 // @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v0.0.9
+//  - Add https support.
+//  - Add "Release" column to "/index2014/Engineering/index.asp" page.
+//
 // v0.0.8
 //  - Add partial auto fill support for "Edit" window.
 //  - Add message alert when flushing project IDs.
@@ -108,6 +113,18 @@ withjQuery(function($, window) {
     }
     redirectToProjectListPage($('li#mainMenuItem_150000 a'));
 
+    // add "Release" column in second row of table
+    function addReleaseToTable(table){
+        var trs = table.find('tbody tr');
+        trs.first().find('th:nth-child(2)').after('<th>Operations</th>');
+        trs.nextAll().each(function(){
+            var id = $(this).find('td:first a:first').text();
+            var rlsUrl = 'http://doc-server/projectManage/ProjectOther/ReleaseList.asp?proj_id=' + id
+            var link = '<a href="' + rlsUrl + '">Release</a>'
+            $(this).find('td:nth-child(2)').after('<td>' + link + '</td>');
+        });
+    };
+
     // operate w.r.t. sub path
     var subpath = window.location.pathname;
     if (subpath == '/login.asp') {
@@ -121,21 +138,19 @@ withjQuery(function($, window) {
         redirectToProjectListPage($('div#headerTopDiv div a:nth-child(2)'));
     } else if (subpath == '/projectManage/ProjectList.asp') {
         console.log('ProjectList');
-        var trs = $('table.ListTable tbody tr');
-        trs.first().find('th:nth-child(2)').after('<th>Operations</th>');
-        trs.nextAll().each(function(){
-            var id = $(this).find('td:first a:first').text();
-            var rlsUrl = 'ProjectOther/ReleaseList.asp?proj_id=' + id
-            var link = '<a href="' + rlsUrl + '">Release</a>'
-            $(this).find('td:nth-child(2)').after('<td>' + link + '</td>');
-        });
+        addReleaseToTable($('table.ListTable'));
+    } else if (subpath == '/index2014/Engineering/index.asp') {
+        console.log('Engineering');
+        addReleaseToTable($('#workspace table:first'));
     } else if (subpath == '/projectManage/ProjectOther/ReleaseList.asp') {
         console.log('ReleaseList');
+        if (window.location.protocol == 'https:') {
+            console.log('Redirecting to http ...');
+            window.location.replace(window.location.href.replace('https://', 'http://'));
+            return;
+        }
         // invert table row
-        btn = $('<input type="button" value="Invert Rows"/>');
-        //btn.appendTo($("body"));
-        btn.insertBefore($("input[type='button']"));
-        btn.click(function(){
+        $('<input type="button" value="Invert Rows"/>').insertBefore($("input[type='button']")).click(function(){
             $('table.ListTable tbody').each(function(elem, index){
                 var arr = $.makeArray($("tr", this).detach());
                 var th = arr.shift();
@@ -143,8 +158,7 @@ withjQuery(function($, window) {
                 arr.unshift(th);
                 $(this).append(arr);
             });
-        });
-        btn.click();
+        }).click();
     } else if (subpath == '/projectManage/ProjectOther/addRelease.asp') {
         console.log('addRelease');
         var istore = new IStorage('addRelease');
