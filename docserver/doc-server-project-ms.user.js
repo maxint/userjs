@@ -174,6 +174,20 @@ withjQuery(function($, window) {
                 $(this).append(arr);
             });
         }).click();
+    } else if (subpath == '/projectManage/ProjectDelivery/delivery_codingreport_update.asp') {
+        console.log('delivery');
+        var id = $('#projectid').val();
+        var istore = new IStorage('project/' + id);
+        var dict = {
+            'svn_path': $('input#SourceCodePath'),
+            'last_tag': $('input#SOSLabel'),
+            'hzpm_notes': $('textarea#hzpm_notes'),
+        };
+        fillValues(dict, istore);
+        $(window).unload(function(){
+            console.log('window unload');
+            storeValues(dict, istore);
+        });
     } else if (subpath == '/projectManage/ProjectOther/addRelease.asp') {
         console.log('addRelease');
         var istore = new IStorage('addRelease');
