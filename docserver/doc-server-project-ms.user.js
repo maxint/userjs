@@ -125,6 +125,21 @@ withjQuery(function($, window) {
         });
     };
 
+    // fill input values
+    var fillValues = function(dict, istore) {
+        for (var key in dict) {
+            var elem = dict[key];
+            if (!elem.val())
+                elem.val(istore.get(key, ''));
+        }
+    }
+    // save input values
+    var storeValues = function(dict, istore) {
+        for (var key in dict) {
+            istore.set(key, dict[key].val());
+        }
+    }
+
     // operate w.r.t. sub path
     var subpath = window.location.pathname;
     if (subpath == '/login.asp') {
@@ -227,29 +242,23 @@ withjQuery(function($, window) {
             };
         };
         var idmgr = new IDManager(istore);
+        var dict = {
+            'version': $("input[name='txtVersion']"),
+            'releasepath': $('input#txtReleasePath'),
+            'package': $('input#txtDeliveryPackage'),
+            'relatedProjectID': $("input[name='txtReleaseReleatedProject']"),
+            'note': $('textarea#txtNotes'),
+        };
         // fill previous data
         if (window.location.search.indexOf('IdentityID=') == -1) {
             // date
             var d = new Date();
             $('input#txtDate').val(d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate());
-            // version
-            $("input[name='txtVersion']").val(istore.get('version'));
-            // release path
-            $('input#txtReleasePath').val(istore.get('releasepath'));
-            // related package
-            $('input#txtDeliveryPackage').val(istore.get('package'));
-            // related project
-            $("input[name='txtReleaseReleatedProject']").val(istore.get('relatedProjectID'));
-            // note
-            $('textarea#txtNotes').val(istore.get('note'));
+            fillValues(dict, istore);
             // save result before close window
             $(window).unload(function(){
                 console.log('window closing');
-                istore.set('relatedProjectID', $("input[name='txtReleaseReleatedProject']").val());
-                istore.set('note', $('textarea#txtNotes').val());
-                istore.set('package', $('input#txtDeliveryPackage').val());
-                istore.set('releasepath', $('input#txtReleasePath').val());
-                istore.set('version', $("input[name='txtVersion']").val());
+                storeValues(dict, istore);
                 idmgr.save();
             });
         }
