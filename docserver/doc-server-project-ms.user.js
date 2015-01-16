@@ -273,7 +273,31 @@
                 idmgr.save();
             });
         }
-        // release package
+        // submit
+        $('#btnSubmit').removeAttr('onclick').click(function () {
+            if (!checkReleateProject()) {
+                return false;
+            }
+            if ($('#form1').valid()) {
+                console.log('submitting form..');
+                var qstr = $('#form1').formSerialize();
+                console.log(qstr);
+                $(this).attr('disabled', true);
+                $.post('../Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
+                    $("#btnSubmit").attr("disabled", false);
+                    if (data == "success") {
+                        //添加成功的处理
+                        alert("提交成功");
+                        parent.document.location.reload();
+                    } else {
+                        alert(data);
+                    }
+                }).error(function () {
+                    alert("系统网络错误,请联系相关人员处理.");
+                });
+            }
+        });
+        // update version
         $('input#txtDeliveryPackage').change(function () {
             var val = $(this).val();
             var vers = /(\d+)\.(\d+)\.\d+\.(\d+)/g.exec(val);
@@ -286,6 +310,7 @@
         }).css({
             'width': '100%',
         });
+        // release package
         $('input#txtReleasePath').css({
             'width': '100%',
         });
@@ -301,10 +326,8 @@
                               '<tr><td/><td>Clear all saved data</td>' +
                               '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>' +
                           '</tfoot>' +
-                          '</table>').insertAfter($('input#btnCheckReleatedProject').next());
-            table.css({
-                width: '100%',
-            });
+                          '</table>').css({ width: '100%' });
+            $('input#btnCheckReleatedProject').after('<div></div>').next().after(table);
             idmgr.change(function (data) {
                 table.find('tbody').each(function () {
                     $(this).empty();
