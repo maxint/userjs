@@ -53,7 +53,7 @@
     if (typeof(jQuery) == "undefined") {
         var script = document.createElement("script");
         script.type = "text/javascript";
-        script.src = "https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js";
+        script.src = "https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.11.1.min.js";
         if (safe) {
             var cb = document.createElement("script");
             cb.type = "text/javascript";
@@ -253,18 +253,25 @@
             };
         };
         var idmgr = new IDManager(istore);
-        var dict = {
-            'version': $("input[name='txtVersion']"),
-            'releasepath': $('input#txtReleasePath'),
-            'package': $('input#txtDeliveryPackage'),
-            'relatedProjectID': $("input[name='txtReleaseReleatedProject']"),
-            'note': $('textarea#txtNotes'),
-        };
-        // fill previous data
         if (window.location.search.indexOf('IdentityID=') == -1) {
             // date
             var d = new Date();
             $('input#txtDate').val(d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate());
+            // create packages textarea
+            var packagesTextArea = $('<textarea id="txtDeliveryPackages"></textarea>').css({
+                'width': '100%',
+                'height': '80px',
+            });
+            $('input#txtDeliveryPackage').siblings('input').last().after(packagesTextArea);
+            // fill previous data
+            var dict = {
+                'version': $("input[name='txtVersion']"),
+                'releasepath': $('input#txtReleasePath'),
+                'package': $('input#txtDeliveryPackage'),
+                'packages': $('textarea#txtDeliveryPackages'),
+                'relatedProjectID': $("input[name='txtReleaseReleatedProject']"),
+                'note': $('textarea#txtNotes'),
+            };
             fillValues(dict, istore);
             // save result before close window
             $(window).unload(function () {
@@ -272,33 +279,42 @@
                 storeValues(dict, istore);
                 idmgr.save();
             });
-        }
-        // submit
-        $('#btnSubmit').removeAttr('onclick').click(function () {
-            if (!checkReleateProject()) {
-                return false;
-            }
-            if ($('#form1').valid()) {
-                console.log('submitting form..');
-                var qstr = $('#form1').formSerialize();
-                console.log(qstr);
-                $(this).attr('disabled', true);
-                $.post('../Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
-                    $("#btnSubmit").attr("disabled", false);
-                    if (data == "success") {
-                        //添加成功的处理
-                        alert("提交成功");
-                        parent.document.location.reload();
-                    } else {
-                        alert(data);
+            // submit
+            $('#btnSubmit').removeAttr('onclick').click(function () {
+                // check form
+                console.log('checking form ...');
+                if (!checkReleateProject())
+                    return;
+                var pkgs = packagesTextArea.val().split('\n');
+                for (var i in pkgs) {
+                    var pkg = pkgs[i];
+                    $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
+                    if (!$('#form1').valid()) {
+                        alert('提交包列表格式不对');
+                        return;
                     }
-                }).error(function () {
-                    alert("系统网络错误,请联系相关人员处理.");
-                });
-            }
-        });
+                }
+                // submit
+                $(this).attr('disabled', true);
+                for (var i in pkgs) {
+                    var pkg = pkgs[i];
+                    console.log('submitting ' + pkg + ' ...');
+                    $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
+                    var qstr = $('#form1').formSerialize();
+                    $.post('../Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
+                        if (data != "success")
+                            alert(data);
+                    }).error(function () {
+                        alert("系统网络错误,请联系相关人员处理.");
+                        return;
+                    });
+                }
+                alert("提交成功");
+                parent.document.location.reload();
+            });
+        }
         // update version
-        $('input#txtDeliveryPackage').change(function () {
+        $('#txtDeliveryPackage,#txtDeliveryPackages').change(function () {
             var val = $(this).val();
             var vers = /(\d+)\.(\d+)\.\d+\.(\d+)/g.exec(val);
             if (vers == null)
