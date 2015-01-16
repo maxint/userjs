@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     0.0.9
+// @version     1
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v1
+//  - Add support for submitting multiple packages at one time.
+//
 // v0.0.9
 //  - Add https support.
 //  - Add "Release" column to "/index2014/Engineering/index.asp" page.
@@ -262,7 +265,10 @@
                 'width': '100%',
                 'height': '80px',
             });
-            $('input#txtDeliveryPackage').siblings('input').last().after(packagesTextArea);
+            $('input#txtDeliveryPackage').hide().siblings('input').hide().last().after(packagesTextArea);
+            packagesTextArea.next().each(function () {
+                $(this).html('请输入递交包文件名，支持多个文件一起提交，每行一个文件名。');
+            });
             // fill previous data
             var dict = {
                 'version': $("input[name='txtVersion']"),
