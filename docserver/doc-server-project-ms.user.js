@@ -49,7 +49,7 @@
 // ==/UserScript==
 
 // a function that loads jQuery and calls a callback function when jQuery has finished loading
-function withjQuery(callback, safe) {
+; (function (callback, safe) {
     if (typeof(jQuery) == "undefined") {
         var script = document.createElement("script");
         script.type = "text/javascript";
@@ -58,13 +58,13 @@ function withjQuery(callback, safe) {
             var cb = document.createElement("script");
             cb.type = "text/javascript";
             cb.textContent = "jQuery.noConflict();(" + callback.toString() + ")(jQuery, window);";
-            script.addEventListener('load', function(){
+            script.addEventListener('load', function () {
                 document.head.appendChild(cb);
             });
         } else {
             var dollar = undefined;
             if (typeof($) != "undefined") dollar = $;
-            script.addEventListener('load', function(){
+            script.addEventListener('load', function () {
                 jQuery.noConflict();
                 $ = dollar;
                 callback(jQuery, window);
@@ -73,36 +73,33 @@ function withjQuery(callback, safe) {
         document.head.appendChild(script);
     } else {
         console.log('Using jquery ' + jQuery().jquery);
-        setTimeout(function(){
+        setTimeout(function () {
             //Firefox supports
             console.log('Runing custom script');
             callback(jQuery, typeof(unsafeWindow) == "undefined" ? window : unsafeWindow);
         }, 30);
     }
-}
-
-// the guts of this userscript
-withjQuery(function($, window) {
+})(function ($, window) {
     // helper functions
     // local storage
-    var IStorage = function(prefix){
+    var IStorage = function (prefix) {
         var pref = prefix + '.';
-        var addpref = function(key) { return pref + key; };
-        this.get = function(key, def){
+        var addpref = function (key) { return pref + key; };
+        this.get = function (key, def) {
             var val = window.localStorage.getItem(addpref(key));
             return val || def || null;
         };
-        this.set = function(key, val){
+        this.set = function (key, val) {
             window.localStorage.setItem(addpref(key), val);
         };
-        this.flush = function(){
+        this.flush = function () {
             window.localStorage.clear();
         };
-        this.getObject = function(key, def){
+        this.getObject = function (key, def) {
             var val = this.get(key);
             return val ? JSON.parse(val) : (def || null);
         };
-        this.setObject = function(key, val){
+        this.setObject = function (key, val) {
             this.set(key, JSON.stringify(val));
         };
     };
@@ -114,10 +111,10 @@ withjQuery(function($, window) {
     redirectToProjectListPage($('li#mainMenuItem_150000 a'));
 
     // add "Release" column in second row of table
-    function addReleaseToTable(table){
+    function addReleaseToTable(table) {
         var trs = table.find('tbody tr');
         trs.first().find('th:nth-child(2)').after('<th>Operations</th>');
-        trs.nextAll().each(function(){
+        trs.nextAll().each(function () {
             var id = $(this).find('td:first a:first').text();
             var rlsUrl = 'http://doc-server/projectManage/ProjectOther/ReleaseList.asp?proj_id=' + id
             var link = '<a href="' + rlsUrl + '">Release</a>'
@@ -126,7 +123,7 @@ withjQuery(function($, window) {
     };
 
     // fill input values
-    var fillValues = function(dict, istore) {
+    var fillValues = function (dict, istore) {
         for (var key in dict) {
             var elem = dict[key];
             if (!elem.val())
@@ -134,7 +131,7 @@ withjQuery(function($, window) {
         }
     }
     // save input values
-    var storeValues = function(dict, istore) {
+    var storeValues = function (dict, istore) {
         for (var key in dict) {
             istore.set(key, dict[key].val());
         }
@@ -143,7 +140,7 @@ withjQuery(function($, window) {
     // operate w.r.t. sub path
     var subpath = window.location.pathname;
     if (subpath == '/login.asp') {
-        $('input#password').keyup(function(e){
+        $('input#password').keyup(function (e) {
             if (e.which == 13) {
                 $('input[value="Login"]').click();
             }
@@ -165,8 +162,8 @@ withjQuery(function($, window) {
             return;
         }
         // invert table row
-        $('<input type="button" value="Invert Rows"/>').insertBefore($("input[type='button']")).click(function(){
-            $('table.ListTable tbody').each(function(elem, index){
+        $('<input type="button" value="Invert Rows"/>').insertBefore($("input[type='button']")).click(function () {
+            $('table.ListTable tbody').each(function (elem, index) {
                 var arr = $.makeArray($("tr", this).detach());
                 var th = arr.shift();
                 arr.reverse();
@@ -184,7 +181,7 @@ withjQuery(function($, window) {
             'hzpm_notes': $('textarea#hzpm_notes'),
         };
         fillValues(dict, istore);
-        $(window).unload(function(){
+        $(window).unload(function () {
             console.log('window unload');
             storeValues(dict, istore);
         });
@@ -192,56 +189,56 @@ withjQuery(function($, window) {
         console.log('addRelease');
         var istore = new IStorage('addRelease');
         // related project IDs
-        var IDManager = function(db) {
+        var IDManager = function (db) {
             var storeid = 'IDs';
             var idb = db;
-            var cb = function(){};
+            var cb = function () {};
             this.data = {};
-            this.load = function(){
+            this.load = function () {
                 this.data = idb.getObject(storeid, {});
                 cb(this.data);
                 return this;
             };
-            this.save = function(){
+            this.save = function () {
                 idb.setObject(storeid, this.data);
                 return this;
             };
-            this.add = function(id, name){
+            this.add = function (id, name) {
                 if (!(id in this.data)) {
                     this.data[id] = {name: name};
                     cb(this.data);
                 }
                 return this;
             };
-            this.set = function(id, name){
+            this.set = function (id, name) {
                 if (id in this.data) {
                     this.data[id] = {name: name};
                 }
                 return this;
             };
-            this.remove = function(id){
+            this.remove = function (id) {
                 if (id in this.data) {
                     delete this.data[id];
                     cb(this.data);
                 }
                 return this;
             };
-            this.clear = function(id){
+            this.clear = function (id) {
                 if (this.data) {
                     this.data = {};
                     cb(this.data);
                 }
                 return this;
             };
-            this.change = function(callback) {
+            this.change = function (callback) {
                 var oldcb = cb;
-                cb = function(data){ oldcb(data); callback(data); }
+                cb = function (data) { oldcb(data); callback(data); }
                 return this;
             };
-            this.check = function(id, callback){
+            this.check = function (id, callback) {
                 if (/^[0-9]{4}$/.test(id)) {
                     var url = '../ProjectDelivery/delivery_releated_project_list.asp';
-                    $.get(url, {projid: id}, function(data, status){
+                    $.get(url, {projid: id}, function (data, status) {
                         name = $(data).find('td:nth-child(2)').text();
                         proj_status = $(data).find('td:nth-child(3)').text();
                         if (status == 'success' && callback)
@@ -270,14 +267,14 @@ withjQuery(function($, window) {
             $('input#txtDate').val(d.getFullYear() + '/' + (d.getMonth()+1) + '/' + d.getDate());
             fillValues(dict, istore);
             // save result before close window
-            $(window).unload(function(){
+            $(window).unload(function () {
                 console.log('window closing');
                 storeValues(dict, istore);
                 idmgr.save();
             });
         }
         // release package
-        $('input#txtDeliveryPackage').change(function(){
+        $('input#txtDeliveryPackage').change(function () {
             var val = $(this).val();
             var vers = /(\d+)\.(\d+)\.\d+\.(\d+)/g.exec(val);
             if (vers == null)
@@ -293,7 +290,7 @@ withjQuery(function($, window) {
             'width': '100%',
         });
         // related project table
-        $(function(){
+        $(function () {
             var table = $('<table>' +
                           '<thead><tr><td style="width:40px">ID</td><td>Name</td><td style="width:60px">Operation</td></tr></thead>' +
                           '<tbody></tbody>' +
@@ -308,8 +305,8 @@ withjQuery(function($, window) {
             table.css({
                 width: '100%',
             });
-            idmgr.change(function(data){
-                table.find('tbody').each(function(){
+            idmgr.change(function (data) {
+                table.find('tbody').each(function () {
                     $(this).empty();
                     // insert exist items
                     for (var id in data) {
@@ -320,16 +317,16 @@ withjQuery(function($, window) {
                     }
                 });
             }).load();
-            table.find('tbody').delegate('input#delID', 'click', function(){
+            table.find('tbody').delegate('input#delID', 'click', function () {
                 var id = $(this).parent().prev().prev().text();
                 idmgr.remove(id);
-            }).delegate('td.projIdName', 'click', function(){
+            }).delegate('td.projIdName', 'click', function () {
                 if ($(this).find('input').length) return;
                 var oldval = $(this).text();
                 $(this).addClass('cellEditing');
                 $(this).empty();
                 var input = $('<input type="text", value="' + oldval + '"/>');
-                input.appendTo($(this)).focus().keypress(function(e){
+                input.appendTo($(this)).focus().keypress(function (e) {
                     if (e.which == 13) {
                         // enter
                         var id = $(this).parent().prev().text();
@@ -337,41 +334,41 @@ withjQuery(function($, window) {
                         $(this).parent().text(newval);
                         idmgr.set(id, newval);
                     }
-                }).blur(function(){
+                }).blur(function () {
                     $(this).parent().text(oldval);
                 }).css({
                     width: '100%',
                 });
-            }).delegate('td.projId', 'click', function(){
+            }).delegate('td.projId', 'click', function () {
                 var id = $(this).text();
                 $("input[name='txtReleaseReleatedProject']").val(id).keyup();
             });
-            table.find('input#inputID').keyup(function(e){
+            table.find('input#inputID').keyup(function (e) {
                 if (e.which == 13) {
                     $(this).parent().nextAll().find('input#addID').click();
                     return;
                 }
-                idmgr.check($(this).val(), function(name){
+                idmgr.check($(this).val(), function (name) {
                     table.find('td#inputIDtxt').text(name || '');
                 });
             });
-            table.find('input#addID').click(function(){
+            table.find('input#addID').click(function () {
                 var id = table.find('input#inputID').val();
                 var name = table.find('td#inputIDtxt').text();
                 if (id && name) {
                     idmgr.add(id, name);
                 }
             });
-            table.find('input#flushIDs').click(function(){
+            table.find('input#flushIDs').click(function () {
                 if (confirm('Delete all project IDs?')) {
                     idmgr.clear();
                 }
             });
         });
-        $("input[name='txtReleaseReleatedProject']").keyup(function(){
+        $("input[name='txtReleaseReleatedProject']").keyup(function () {
             var id = $(this).val();
             var msgdiv = $('input#btnCheckReleatedProject').next();
-            idmgr.check(id, function(name){
+            idmgr.check(id, function (name) {
                 if (name)
                     msgdiv.html(name);
                 else
