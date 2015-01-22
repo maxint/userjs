@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     1
+// @version     2
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,10 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v2
+//  - Fix bug of pause when multiple delivery packages.
+//  - Add checkboxes to project id table.
+//
 // v1
 //  - Add support for delivery multiple packages to multiple projects at one time.
 //
