@@ -11,7 +11,7 @@
 // @grant       none
 // @Note
 // v1
-//  - Add support for submitting multiple packages at one time.
+//  - Add support for delivery multiple packages to multiple projects at one time.
 //
 // v0.0.9
 //  - Add https support.
@@ -336,27 +336,46 @@
         // related project table
         $(function () {
             var table = $('<table>' +
-                          '<thead><tr><td style="width:40px">ID</td><td>Name</td><td style="width:60px">Operation</td></tr></thead>' +
+                          '<thead><tr style="width:10px">' +
+                              '<td><input id="toggleAllIDs" type="checkbox"></td><td style="width:40px">ID</td><td>Name</td><td style="width:60px">Operation</td>' +
+                          '</tr></thead>' +
                           '<tbody></tbody>' +
                           '<tfoot>' +
-                              '<tr><td><input id="inputID" type="text" size="4"/></td>' +
+                              '<tr><td/>' +
+                              '<td><input id="inputID" type="text" size="4"/></td>' +
                               '<td id="inputIDtxt">Clicking "Add" to add item</td>' +
                               '<td><input id="addID" type="button" value="Add"/></td></tr>' +
-                              '<tr><td/><td>Clear all saved data</td>' +
+                              '<tr><td/><td/><td>Clear all saved data</td>' +
                               '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>' +
                           '</tfoot>' +
                           '</table>').css({ width: '100%' });
             $('input#btnCheckReleatedProject').after('<div></div>').next().after(table);
+            // update check states of check boxes
+            var updateCheckBoxes = function() {
+                var checked = table.find('tbody input:checked').length;
+                var total = table.find('tbody input:checkbox').length;
+                table.find('input#toggleAllIDs').each(function () {
+                    this.indeterminate = checked != total && checked != 0;
+                    if (!this.indeterminate)
+                        this.checked == checked == total;
+                });
+            };
             idmgr.change(function (data) {
                 table.find('tbody').each(function () {
                     $(this).empty();
-                    // insert exist items
+                    // insert items
+                    var selected = $("input[name='txtReleaseReleatedProject']").val().split(',');
+                    console.log(selected);
                     for (var id in data) {
                         var val = data[id];
-                        $('<tr><td class=projId>' + id + '</td>' +
+                        var checked = selected.indexOf(id) != -1;
+                        $('<tr id=proj_' + id + '>' +
+                          '<td><input type="checkbox"></td>' +
+                          '<td>' + id + '</td>' +
                           '<td class="projIdName">' + val['name'] + '</td>' +
-                          '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
+                          '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this)).find(':checkbox').attr('checked', checked);
                     }
+                    updateCheckBoxes();
                 });
             }).load();
             table.find('tbody').delegate('input#delID', 'click', function () {
@@ -381,11 +400,18 @@
                 }).css({
                     width: '100%',
                 });
-            }).delegate('td.projId', 'click', function () {
-                var id = $(this).text();
-                $("input[name='txtReleaseReleatedProject']").val(id).keyup();
             });
-            table.find('input#inputID').keyup(function (e) {
+            table.delegate(':checkbox', 'click', function() {
+                var ids = [];
+                table.find('tbody input:checked').parent().next().each(function() {
+                    ids.push($(this).text());
+                });
+                $("input[name='txtReleaseReleatedProject']").val(ids.join(','));
+                updateCheckBoxes();
+            }).find('input#toggleAllIDs').click(function () {
+                table.find(':checkbox').attr('checked', this.checked);
+            })
+            table.find('tfoot').delegate('input#inputID', 'keyup', function (e) {
                 if (e.which == 13) {
                     $(this).parent().nextAll().find('input#addID').click();
                     return;
@@ -393,30 +419,18 @@
                 idmgr.check($(this).val(), function (name) {
                     table.find('td#inputIDtxt').text(name || '');
                 });
-            });
-            table.find('input#addID').click(function () {
+            }).delegate('input#addID', 'click', function () {
                 var id = table.find('input#inputID').val();
                 var name = table.find('td#inputIDtxt').text();
                 if (id && name) {
                     idmgr.add(id, name);
                 }
-            });
-            table.find('input#flushIDs').click(function () {
+            }).delegate('input#flushIDs', 'click', function () {
                 if (confirm('Delete all project IDs?')) {
                     idmgr.clear();
                 }
             });
         });
-        $("input[name='txtReleaseReleatedProject']").keyup(function () {
-            var id = $(this).val();
-            var msgdiv = $('input#btnCheckReleatedProject').next();
-            idmgr.check(id, function (name) {
-                if (name)
-                    msgdiv.html(name);
-                else
-                    msgdiv.html('<font color="#FF0000">No project found</font>');
-            });
-        }).keyup();
         // notes
         $('textarea#txtNotes').css({
             width: '100%',
