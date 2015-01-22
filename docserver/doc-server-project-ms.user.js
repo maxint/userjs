@@ -307,12 +307,9 @@
                     console.log('submitting ' + pkg + ' ...');
                     $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
                     var qstr = $('#form1').formSerialize();
-                    $.post('../Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
+                    $.post('/projectManage/Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
                         if (data != "success")
                             alert(data);
-                    }).error(function () {
-                        alert("系统网络错误,请联系相关人员处理.");
-                        return;
                     });
                 }
                 alert("提交成功");
