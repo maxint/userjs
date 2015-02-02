@@ -210,21 +210,24 @@
                 idb.setObject(storeid, this.data);
                 return this;
             };
+            this.contains = function (id) {
+                return id in this.data;
+            };
             this.add = function (id, name) {
-                if (!(id in this.data)) {
+                if (!this.contains(id)) {
                     this.data[id] = {name: name};
                     cb(this.data);
                 }
                 return this;
             };
             this.set = function (id, name) {
-                if (id in this.data) {
+                if (this.contains(id)) {
                     this.data[id] = {name: name};
                 }
                 return this;
             };
             this.remove = function (id) {
-                if (id in this.data) {
+                if (this.contains(id)) {
                     delete this.data[id];
                     cb(this.data);
                 }
@@ -247,11 +250,12 @@
                     var url = '../ProjectDelivery/delivery_releated_project_list.asp';
                     $.get(url, {projid: id}, function (data, status) {
                         name = $(data).find('td:nth-child(2)').text();
-                        proj_status = $(data).find('td:nth-child(3)').text();
-                        if (status == 'success' && callback)
+                        if (status == 'success' && name != "" && callback) {
+                            proj_status = $(data).find('td:nth-child(3)').text();
                             callback(name, id, proj_status);
-                        else
+                        } else {
                             callback();
+                        }
                     });
                 } else {
                     callback();
@@ -346,9 +350,9 @@
                           '<tbody></tbody>' +
                           '<tfoot>' +
                               '<tr><td/>' +
-                              '<td><input id="inputID" type="text" size="4"/></td>' +
-                              '<td id="inputIDtxt">Clicking "Add" to add item</td>' +
-                              '<td><input id="addID" type="button" value="Add"/></td></tr>' +
+                              '<td><input id="inputID" type="text" maxlength="4" size="4"/></td>' +
+                              '<td id="inputIDtxt" class="projIdName">Clicking "Add" to add item</td>' +
+                              '<td><input id="addID" type="button" value="Add" disabled="true"/></td></tr>' +
                               '<tr><td/><td/><td>Clear all saved data</td>' +
                               '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>' +
                           '</tfoot>' +
@@ -364,33 +368,50 @@
                         this.checked == checked == total;
                 });
             };
+            $("input[name='txtReleaseReleatedProject']").keyup(function () {
+                var selected = $(this).val().split(',');
+                console.log(selected);
+                $(':checkbox', table).attr('checked', false)
+                for (var i in selected) {
+                    var id = selected[i];
+                    if (/^\d{4}$/.test(id)) {
+                        $('#proj_' + id + ' :checkbox', table).attr('checked', true)
+                    }
+                }
+                updateCheckBoxes();
+            });
             idmgr.change(function (data) {
                 table.find('tbody').each(function () {
                     $(this).empty();
                     // insert items
-                    var selected = $("input[name='txtReleaseReleatedProject']").val().split(',');
-                    console.log(selected);
                     for (var id in data) {
                         var val = data[id];
-                        var checked = selected.indexOf(id) != -1;
                         $('<tr id=proj_' + id + '>' +
                           '<td><input type="checkbox"></td>' +
                           '<td>' + id + '</td>' +
                           '<td class="projIdName">' + val['name'] + '</td>' +
-                          '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this)).find(':checkbox').attr('checked', checked);
+                          '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
                     }
-                    updateCheckBoxes();
+                    $("input[name='txtReleaseReleatedProject']").keyup();
                 });
             }).load();
             table.find('tbody').delegate('input#delID', 'click', function () {
                 var id = $(this).parent().prev().prev().text();
                 idmgr.remove(id);
+            });
+            table.delegate(':checkbox', 'click', function() {
+                var ids = [];
+                table.find('tbody input:checked').parent().next().each(function() {
+                    ids.push($(this).text());
+                });
+                $("input[name='txtReleaseReleatedProject']").val(ids.join(','));
+                updateCheckBoxes();
             }).delegate('td.projIdName', 'click', function () {
                 if ($(this).find('input').length) return;
                 var oldval = $(this).text();
                 $(this).addClass('cellEditing');
                 $(this).empty();
-                var input = $('<input type="text", value="' + oldval + '"/>');
+                var input = $('<input type="text"/>').val(oldval);
                 input.appendTo($(this)).focus().keypress(function (e) {
                     if (e.which == 13) {
                         // enter
@@ -404,31 +425,23 @@
                 }).css({
                     width: '100%',
                 });
-            });
-            table.delegate(':checkbox', 'click', function() {
-                var ids = [];
-                table.find('tbody input:checked').parent().next().each(function() {
-                    ids.push($(this).text());
-                });
-                $("input[name='txtReleaseReleatedProject']").val(ids.join(','));
-                updateCheckBoxes();
             }).find('input#toggleAllIDs').click(function () {
                 table.find(':checkbox').attr('checked', this.checked);
             })
+            var addButton = $('input#addID', table)
             table.find('tfoot').delegate('input#inputID', 'keyup', function (e) {
-                if (e.which == 13) {
-                    $(this).parent().nextAll().find('input#addID').click();
+                if (e.which == 13 && !addButton.attr('disabled')) {
+                    addButton.click();
                     return;
                 }
-                idmgr.check($(this).val(), function (name) {
-                    table.find('td#inputIDtxt').text(name || '');
+                idmgr.check(this.value, function (name) {
+                    table.find('td#inputIDtxt').html(name || '<font color="#FF0000">[Invalid project id]</font>');
+                    addButton.attr('disabled', name == undefined)
                 });
             }).delegate('input#addID', 'click', function () {
                 var id = table.find('input#inputID').val();
                 var name = table.find('td#inputIDtxt').text();
-                if (id && name) {
-                    idmgr.add(id, name);
-                }
+                idmgr.add(id, name);
             }).delegate('input#flushIDs', 'click', function () {
                 if (confirm('Delete all project IDs?')) {
                     idmgr.clear();
