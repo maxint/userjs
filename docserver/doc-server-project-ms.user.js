@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     2
+// @version     3
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,11 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v3
+//  - Update id checkboxes w.r.t. keyboard input.
+//  - Sort project id rows w.r.t. checked statuses.
+//  - Add input project id automatically.
+//
 // v2
 //  - Fix bug of pause when multiple delivery packages.
 //  - Add checkboxes to project id table.
@@ -345,7 +350,7 @@
         $(function () {
             var table = $('<table>' +
                           '<thead><tr style="width:10px">' +
-                              '<td><input id="toggleAllIDs" type="checkbox"></td><td style="width:40px">ID</td><td>Name</td><td style="width:60px">Operation</td>' +
+                              '<td><input id="selectAllIDs" type="checkbox"></td><td style="width:40px">ID</td><td>Name</td><td style="width:60px">Operation</td>' +
                           '</tr></thead>' +
                           '<tbody></tbody>' +
                           '<tfoot>' +
@@ -362,21 +367,29 @@
             var updateCheckBoxes = function() {
                 var checked = table.find('tbody input:checked').length;
                 var total = table.find('tbody input:checkbox').length;
-                table.find('input#toggleAllIDs').each(function () {
+                table.find('input#selectAllIDs').each(function () {
                     this.indeterminate = checked != total && checked != 0;
                     if (!this.indeterminate)
                         this.checked == checked == total;
                 });
             };
             $("input[name='txtReleaseReleatedProject']").keyup(function () {
-                var selected = $(this).val().split(',');
-                console.log(selected);
-                $(':checkbox', table).attr('checked', false)
-                for (var i in selected) {
-                    var id = selected[i];
-                    if (/^\d{4}$/.test(id)) {
-                        $('#proj_' + id + ' :checkbox', table).attr('checked', true)
+                var val = this.value.trim();
+                var selected = val.split(',');
+                if (val == '' || selected.every(function(id) { return /^\d{4}$/.test(id); })) {
+                    console.log('Selected: ' + selected);
+                    $(':checkbox', table).attr('checked', false);
+                    for (var i in selected) {
+                        var id = selected[i];
+                        if (!idmgr.contains(id)) {
+                            idmgr.check(id, function (name) {
+                                if (name)
+                                    idmgr.add(id, name);
+                            });
+                        }
+                        $('#proj_' + id + ' :checkbox', table).attr('checked', true);
                     }
+                    $('tbody input:checked', table).parent().parent().detach().prependTo($('tbody', table));
                 }
                 updateCheckBoxes();
             });
@@ -397,6 +410,8 @@
             }).load();
             table.find('tbody').delegate('input#delID', 'click', function () {
                 var id = $(this).parent().prev().prev().text();
+                console.log('Delete: ' + id);
+                $('#proj_' + id + ' :checkbox', table).attr('checked', false).click();
                 idmgr.remove(id);
             });
             table.delegate(':checkbox', 'click', function() {
@@ -425,7 +440,7 @@
                 }).css({
                     width: '100%',
                 });
-            }).find('input#toggleAllIDs').click(function () {
+            }).find('input#selectAllIDs').click(function () {
                 table.find(':checkbox').attr('checked', this.checked);
             })
             var addButton = $('input#addID', table)
@@ -441,6 +456,7 @@
             }).delegate('input#addID', 'click', function () {
                 var id = table.find('input#inputID').val();
                 var name = table.find('td#inputIDtxt').text();
+                console.log('Add: ' + id +', ' + name);
                 idmgr.add(id, name);
             }).delegate('input#flushIDs', 'click', function () {
                 if (confirm('Delete all project IDs?')) {
