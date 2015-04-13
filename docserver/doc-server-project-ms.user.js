@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     3
+// @version     4
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v4
+//  - Fix bug of wrong id in Chrome.
+//
 // v3
 //  - Update id checkboxes w.r.t. keyboard input.
 //  - Sort project id rows w.r.t. checked statuses.
@@ -257,9 +260,9 @@
                         name = $(data).find('td:nth-child(2)').text();
                         if (status == 'success' && name != "" && callback) {
                             proj_status = $(data).find('td:nth-child(3)').text();
-                            callback(name, id, proj_status);
+                            callback(id, name, proj_status);
                         } else {
-                            callback();
+                            callback(id);
                         }
                     });
                 } else {
@@ -381,8 +384,10 @@
                     $(':checkbox', table).attr('checked', false);
                     for (var i in selected) {
                         var id = selected[i];
+                        console.log(id);
+                        console.log(Selected);
                         if (!idmgr.contains(id)) {
-                            idmgr.check(id, function (name) {
+                            idmgr.check(id, function (id, name) {
                                 if (name)
                                     idmgr.add(id, name);
                             });
