@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Project Management
-// @version     4
+// @version     5
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,10 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v5
+//  - Fix bug of no response in Firefox.
+//  - Sort project Ids.
+//
 // v4
 //  - Fix bug of wrong id in Chrome.
 //
@@ -119,6 +123,13 @@
         };
     };
 
+    // assert function
+    function assert(condition, message) {
+        if (!condition) {
+            throw message || "Assertion failed";
+        }
+    }
+
     // replace main menu [Project]
     function redirectToProjectListPage(obj) {
         obj.attr('href', '/projectManage/ProjectList.asp');
@@ -222,6 +233,7 @@
                 return id in this.data;
             };
             this.add = function (id, name) {
+                assert(/^\d{4}$/.test(id));
                 if (!this.contains(id)) {
                     this.data[id] = {name: name};
                     cb(this.data);
@@ -376,6 +388,7 @@
                         this.checked == checked == total;
                 });
             };
+            // detete id input box
             $("input[name='txtReleaseReleatedProject']").keyup(function () {
                 var val = this.value.trim();
                 var selected = val.split(',');
@@ -384,16 +397,16 @@
                     $(':checkbox', table).attr('checked', false);
                     for (var i in selected) {
                         var id = selected[i];
-                        console.log(id);
-                        console.log(Selected);
                         if (!idmgr.contains(id)) {
                             idmgr.check(id, function (id, name) {
-                                if (name)
+                                if (name) {
                                     idmgr.add(id, name);
+                                }
                             });
                         }
                         $('#proj_' + id + ' :checkbox', table).attr('checked', true);
                     }
+                    // move checked IDs to the front
                     $('tbody input:checked', table).parent().parent().detach().prependTo($('tbody', table));
                 }
                 updateCheckBoxes();
@@ -402,7 +415,10 @@
                 table.find('tbody').each(function () {
                     $(this).empty();
                     // insert items
-                    for (var id in data) {
+                    var keys = Object.keys(data);
+                    keys.sort();
+                    for (var i in keys) {
+                        var id = keys[i];
                         var val = data[id];
                         $('<tr id=proj_' + id + '>' +
                           '<td><input type="checkbox"></td>' +
