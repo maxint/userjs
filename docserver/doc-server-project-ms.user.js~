@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     6
+// @version     5
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,9 +10,6 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
-// v6
-//  -Fix bug of Object.keys() in Chrome.
-//
 // v5
 //  - Fix bug of no response in Firefox.
 //  - Sort project Ids.
@@ -70,6 +67,7 @@
 //
 // ==/UserScript==
 
+console.log('hi');
 // a function that loads jQuery and calls a callback function when jQuery has finished loading
 ; (function (callback, safe) {
     if (typeof(jQuery) == "undefined") {
@@ -400,7 +398,7 @@
             $("input[name='txtReleaseReleatedProject']").keyup(function () {
                 var val = this.value.trim();
                 var selected = val.split(',');
-                if (val == '' || selected.every(checkID)) {
+                if (val == '' || selected.every(checkID) {
                     console.log('Selected: ' + selected);
                     $(':checkbox', table).attr('checked', false);
                     for (var i in selected) {
@@ -418,80 +416,80 @@
                     $('tbody input:checked', table).parent().parent().detach().prependTo($('tbody', table));
                 }
                 updateCheckBoxes();
-            });
-            idmgr.change(function (data) {
-                table.find('tbody').each(function () {
-                    $(this).empty();
-                    // insert items
-                    var keys = Object.keys(data).filter(checkID);
-                    keys.sort();
-                    for (var i in keys) {
-                        var id = keys[i];
-                        var val = data[id];
-                        $('<tr id=proj_' + id + '>' +
-                          '<td><input type="checkbox"></td>' +
-                          '<td>' + id + '</td>' +
-                          '<td class="projIdName">' + val['name'] + '</td>' +
-                          '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
-                    }
-                    $("input[name='txtReleaseReleatedProject']").keyup();
                 });
-            }).load();
-            table.find('tbody').delegate('input#delID', 'click', function () {
-                var id = $(this).parent().prev().prev().text();
-                console.log('Delete: ' + id);
-                $('#proj_' + id + ' :checkbox', table).attr('checked', false).click();
-                idmgr.remove(id);
-            });
-            table.delegate(':checkbox', 'click', function() {
-                var ids = [];
-                table.find('tbody input:checked').parent().next().each(function() {
-                    ids.push($(this).text());
-                });
-                $("input[name='txtReleaseReleatedProject']").val(ids.join(','));
-                updateCheckBoxes();
-            }).delegate('td.projIdName', 'click', function () {
-                if ($(this).find('input').length) return;
-                var oldval = $(this).text();
-                $(this).addClass('cellEditing');
-                $(this).empty();
-                var input = $('<input type="text"/>').val(oldval);
-                input.appendTo($(this)).focus().keypress(function (e) {
-                    if (e.which == 13) {
-                        // enter
-                        var id = $(this).parent().prev().text();
-                        var newval = $(this).val();
-                        $(this).parent().text(newval);
-                        idmgr.set(id, newval);
-                    }
-                }).blur(function () {
-                    $(this).parent().text(oldval);
-                }).css({
-                    width: '100%',
-                });
-            }).find('input#selectAllIDs').click(function () {
-                table.find(':checkbox').attr('checked', this.checked);
-            })
-            var addButton = $('input#addID', table)
-                table.find('tfoot').delegate('input#inputID', 'keyup', function (e) {
-                    if (e.which == 13 && !addButton.attr('disabled')) {
-                        addButton.click();
-                        return;
-                    }
-                    idmgr.check(this.value, function (name) {
-                        table.find('td#inputIDtxt').html(name || '<font color="#FF0000">[Invalid project id]</font>');
-                        addButton.attr('disabled', name == undefined)
+                idmgr.change(function (data) {
+                    table.find('tbody').each(function () {
+                        $(this).empty();
+                        // insert items
+                        var keys = Object.keys(data).filter(checkID);
+                        keys.sort();
+                        for (var i in keys) {
+                            var id = keys[i];
+                            var val = data[id];
+                            $('<tr id=proj_' + id + '>' +
+                              '<td><input type="checkbox"></td>' +
+                              '<td>' + id + '</td>' +
+                              '<td class="projIdName">' + val['name'] + '</td>' +
+                              '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
+                        }
+                        $("input[name='txtReleaseReleatedProject']").keyup();
                     });
-                }).delegate('input#addID', 'click', function () {
-                    var id = table.find('input#inputID').val();
-                    var name = table.find('td#inputIDtxt').text();
-                    console.log('Add: ' + id +', ' + name);
-                    idmgr.add(id, name);
-                }).delegate('input#flushIDs', 'click', function () {
-                    if (confirm('Delete all project IDs?')) {
-                        idmgr.clear();
-                    }
+                }).load();
+                table.find('tbody').delegate('input#delID', 'click', function () {
+                    var id = $(this).parent().prev().prev().text();
+                    console.log('Delete: ' + id);
+                    $('#proj_' + id + ' :checkbox', table).attr('checked', false).click();
+                    idmgr.remove(id);
                 });
+                table.delegate(':checkbox', 'click', function() {
+                    var ids = [];
+                    table.find('tbody input:checked').parent().next().each(function() {
+                        ids.push($(this).text());
+                    });
+                    $("input[name='txtReleaseReleatedProject']").val(ids.join(','));
+                    updateCheckBoxes();
+                }).delegate('td.projIdName', 'click', function () {
+                    if ($(this).find('input').length) return;
+                    var oldval = $(this).text();
+                    $(this).addClass('cellEditing');
+                    $(this).empty();
+                    var input = $('<input type="text"/>').val(oldval);
+                    input.appendTo($(this)).focus().keypress(function (e) {
+                        if (e.which == 13) {
+                            // enter
+                            var id = $(this).parent().prev().text();
+                            var newval = $(this).val();
+                            $(this).parent().text(newval);
+                            idmgr.set(id, newval);
+                        }
+                    }).blur(function () {
+                        $(this).parent().text(oldval);
+                    }).css({
+                        width: '100%',
+                    });
+                }).find('input#selectAllIDs').click(function () {
+                    table.find(':checkbox').attr('checked', this.checked);
+                })
+                var addButton = $('input#addID', table)
+                    table.find('tfoot').delegate('input#inputID', 'keyup', function (e) {
+                        if (e.which == 13 && !addButton.attr('disabled')) {
+                            addButton.click();
+                            return;
+                        }
+                        idmgr.check(this.value, function (name) {
+                            table.find('td#inputIDtxt').html(name || '<font color="#FF0000">[Invalid project id]</font>');
+                            addButton.attr('disabled', name == undefined)
+                        });
+                    }).delegate('input#addID', 'click', function () {
+                        var id = table.find('input#inputID').val();
+                        var name = table.find('td#inputIDtxt').text();
+                        console.log('Add: ' + id +', ' + name);
+                        idmgr.add(id, name);
+                    }).delegate('input#flushIDs', 'click', function () {
+                        if (confirm('Delete all project IDs?')) {
+                            idmgr.clear();
+                        }
+                    });
         });
         // notes
         $('textarea#txtNotes').css({
