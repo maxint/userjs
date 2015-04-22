@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     6
+// @version     7
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,8 +10,12 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v7
+//  - Fix bug of using for in loop, use Array.forEach instead.
+//  - Filter empty package path.
+//
 // v6
-//  -Fix bug of Object.keys() in Chrome.
+//  - Fix bug of Object.keys() in Chrome.
 //
 // v5
 //  - Fix bug of no response in Firefox.
@@ -84,7 +88,7 @@
                 document.head.appendChild(cb);
             });
         } else {
-            var dollar = undefined;
+            var dollar;
             if (typeof($) != "undefined") dollar = $;
             script.addEventListener('load', function () {
                 jQuery.noConflict();
@@ -145,8 +149,8 @@
         trs.first().find('th:nth-child(2)').after('<th>Operations</th>');
         trs.nextAll().each(function () {
             var id = $(this).find('td:first a:first').text();
-            var rlsUrl = 'http://doc-server/projectManage/ProjectOther/ReleaseList.asp?proj_id=' + id
-            var link = '<a href="' + rlsUrl + '">Release</a>'
+            var rlsUrl = 'http://doc-server/projectManage/ProjectOther/ReleaseList.asp?proj_id=' + id;
+            var link = '<a href="' + rlsUrl + '">Release</a>';
             $(this).find('td:nth-child(2)').after('<td>' + link + '</td>');
         });
     }
@@ -154,15 +158,19 @@
     // fill input values
     function fillValues(dict, istore) {
         for (var key in dict) {
-            var elem = dict[key];
-            if (!elem.val())
-                elem.val(istore.get(key, ''));
+            if (dict.hasOwnProperty(key)) {
+                var elem = dict[key];
+                if (!elem.val())
+                    elem.val(istore.get(key, ''));
+            }
         }
     }
     // save input values
     function storeValues(dict, istore) {
         for (var key in dict) {
-            istore.set(key, dict[key].val());
+            if (dict.hasOwnProperty(key)) {
+                istore.set(key, dict[key].val());
+            }
         }
     }
 
@@ -270,15 +278,15 @@
             };
             this.change = function (callback) {
                 var oldcb = cb;
-                cb = function (data) { oldcb(data); callback(data); }
+                cb = function (data) { oldcb(data); callback(data); };
                 return this;
             };
             this.check = function (id, callback) {
                 if (checkID(id)) {
                     var url = '../ProjectDelivery/delivery_releated_project_list.asp';
                     $.get(url, {projid: id}, function (data, status) {
-                        name = $(data).find('td:nth-child(2)').text();
-                        if (status == 'success' && name != "" && callback) {
+                        var name = $(data).find('td:nth-child(2)').text();
+                        if (status == 'success' && name !== "" && callback) {
                             proj_status = $(data).find('td:nth-child(3)').text();
                             callback(id, name, proj_status);
                         } else {
@@ -326,42 +334,41 @@
                 // check form
                 console.log('checking form ...');
                 if (!checkReleateProject())
-                return;
-            var pkgs = packagesTextArea.val().split('\n');
-            for (var i in pkgs) {
-                var pkg = pkgs[i];
-                $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
-                if (!$('#form1').valid()) {
-                    alert('提交包列表格式不对');
                     return;
-                }
-            }
-            // submit
-            $(this).attr('disabled', true);
-            for (var i in pkgs) {
-                var pkg = pkgs[i];
-                console.log('submitting ' + pkg + ' ...');
-                $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
-                var qstr = $('#form1').formSerialize();
-                $.post('/projectManage/Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
-                    if (data != "success")
-                    alert(data);
+                var pkgs = packagesTextArea.val().split('\n').map(String.trim).filter(function (s) { return s !== ''; });
+                pkgs.forEach(function (pkg) {
+                    $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
+                    if (!$('#form1').valid()) {
+                        alert('提交包列表格式不对');
+                        return;
+                    }
                 });
-            }
-            alert("提交成功");
-            parent.document.location.reload();
+                // disable the form to avoid user interaction when subcomt
+                $(this).attr('disabled', true);
+                // submit
+                pkgs.forEach(function (pkg) {
+                    console.log('submitting ' + pkg + ' ...');
+                    $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
+                    var qstr = $('#form1').formSerialize();
+                    $.post('/projectManage/Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
+                        if (data != "success")
+                            alert(data);
+                    });
+                });
+                alert("提交成功");
+                parent.document.location.reload();
             });
         }
         // update version
         $('#txtDeliveryPackage,#txtDeliveryPackages').change(function () {
             var val = $(this).val();
             var vers = /(\d+)\.(\d+)\.\d+\.(\d+)/g.exec(val);
-            if (vers == null)
-            vers = /(\d+)\.(\d+)\.(\d+)/g.exec(val);
-        if (vers) {
-            vstr = 'v' + [vers[1], vers[2], vers[3]].join('.')
-            $("input[name='txtVersion']").val(vstr);
-        }
+            if (vers === null)
+                vers = /(\d+)\.(\d+)\.(\d+)/g.exec(val);
+            if (vers) {
+                vstr = 'v' + [vers[1], vers[2], vers[3]].join('.');
+                $("input[name='txtVersion']").val(vstr);
+            }
         }).css({
             'width': '100%',
         });
@@ -391,20 +398,19 @@
                 var checked = table.find('tbody input:checked').length;
                 var total = table.find('tbody input:checkbox').length;
                 table.find('input#selectAllIDs').each(function () {
-                    this.indeterminate = checked != total && checked != 0;
+                    this.indeterminate = checked != total && checked !== 0;
                     if (!this.indeterminate)
-                    this.checked == checked == total;
+                        this.checked = (checked == total);
                 });
             };
             // detete id input box
             $("input[name='txtReleaseReleatedProject']").keyup(function () {
                 var val = this.value.trim();
                 var selected = val.split(',');
-                if (val == '' || selected.every(checkID)) {
+                if (val === '' || selected.every(checkID)) {
                     console.log('Selected: ' + selected);
                     $(':checkbox', table).attr('checked', false);
-                    for (var i in selected) {
-                        var id = selected[i];
+                    selected.forEach(function (id) {
                         if (!idmgr.contains(id)) {
                             idmgr.check(id, function (id, name) {
                                 if (name) {
@@ -413,7 +419,7 @@
                             });
                         }
                         $('#proj_' + id + ' :checkbox', table).attr('checked', true);
-                    }
+                    });
                     // move checked IDs to the front
                     $('tbody input:checked', table).parent().parent().detach().prependTo($('tbody', table));
                 }
@@ -425,15 +431,14 @@
                     // insert items
                     var keys = Object.keys(data).filter(checkID);
                     keys.sort();
-                    for (var i in keys) {
-                        var id = keys[i];
+                    keys.forEach(function (id) {
                         var val = data[id];
                         $('<tr id=proj_' + id + '>' +
                           '<td><input type="checkbox"></td>' +
                           '<td>' + id + '</td>' +
-                          '<td class="projIdName">' + val['name'] + '</td>' +
+                          '<td class="projIdName">' + val.name + '</td>' +
                           '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
-                    }
+                    });
                     $("input[name='txtReleaseReleatedProject']").keyup();
                 });
             }).load();
@@ -471,27 +476,27 @@
                 });
             }).find('input#selectAllIDs').click(function () {
                 table.find(':checkbox').attr('checked', this.checked);
-            })
-            var addButton = $('input#addID', table)
-                table.find('tfoot').delegate('input#inputID', 'keyup', function (e) {
-                    if (e.which == 13 && !addButton.attr('disabled')) {
-                        addButton.click();
-                        return;
-                    }
-                    idmgr.check(this.value, function (name) {
-                        table.find('td#inputIDtxt').html(name || '<font color="#FF0000">[Invalid project id]</font>');
-                        addButton.attr('disabled', name == undefined)
-                    });
-                }).delegate('input#addID', 'click', function () {
-                    var id = table.find('input#inputID').val();
-                    var name = table.find('td#inputIDtxt').text();
-                    console.log('Add: ' + id +', ' + name);
-                    idmgr.add(id, name);
-                }).delegate('input#flushIDs', 'click', function () {
-                    if (confirm('Delete all project IDs?')) {
-                        idmgr.clear();
-                    }
+            });
+            var addButton = $('input#addID', table);
+            table.find('tfoot').delegate('input#inputID', 'keyup', function (e) {
+                if (e.which == 13 && !addButton.attr('disabled')) {
+                    addButton.click();
+                    return;
+                }
+                idmgr.check(this.value, function (name) {
+                    table.find('td#inputIDtxt').html(name || '<font color="#FF0000">[Invalid project id]</font>');
+                    addButton.attr('disabled', name === undefined);
                 });
+            }).delegate('input#addID', 'click', function () {
+                var id = table.find('input#inputID').val();
+                var name = table.find('td#inputIDtxt').text();
+                console.log('Add: ' + id +', ' + name);
+                idmgr.add(id, name);
+            }).delegate('input#flushIDs', 'click', function () {
+                if (confirm('Delete all project IDs?')) {
+                    idmgr.clear();
+                }
+            });
         });
         // notes
         $('textarea#txtNotes').css({
