@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     7.1
+// @version     8
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v8
+//  - Add "Version Format" setting dialog.
+//
 // v7
 //  - Fix bug of using "for in" loop for Array.
 //  - Filter empty package path.
@@ -86,7 +89,7 @@
         var script = document.createElement("script");
         script.type = "text/javascript";
         script.src = "//apps.bdimg.com/libs/jquery/2.1.1/jquery.min.js";
-        var dollar = undefined;
+        var dollar;
         if (typeof($) != "undefined") dollar = $;
         script.addEventListener('load', function () {
             var jq = jQuery.noConflict();
@@ -100,8 +103,8 @@
         }, 30);
     }
 })(function (jq, $, window) {
-    $("head").append('<link rel="stylesheet" href="//apps.bdimg.com/libs/jqueryui/1.10.4/css/jquery-ui.min.css">')
-    $.getScript("//apps.bdimg.com/libs/jqueryui/1.10.4/jquery-ui.min.js")
+    $("head").append('<link rel="stylesheet" href="//apps.bdimg.com/libs/jqueryui/1.10.4/css/jquery-ui.min.css">');
+    $.getScript("//apps.bdimg.com/libs/jqueryui/1.10.4/jquery-ui.min.js");
     // helper functions
     // local storage
     var IStorage = function (prefix) {
@@ -109,7 +112,10 @@
         var addpref = function (key) { return pref + key; };
         this.get = function (key, def) {
             var val = window.localStorage.getItem(addpref(key));
-            return val || def || null;
+            if (val !== null)
+                return val;
+            else
+                return def || null;
         };
         this.set = function (key, val) {
             window.localStorage.setItem(addpref(key), val);
@@ -377,18 +383,64 @@
             });
         }
         // update version
-        //dict.version.parent().append('<button id="version-format">Set Version Format</button>');
-        $('#txtDeliveryPackage,#txtDeliveryPackages').change(function () {
+        var default_version_fmt = '${major}.${minor}.${platform}.${build}';
+        var pkgInputs = $('#txtDeliveryPackage,#txtDeliveryPackages').change(function () {
             var val = $(this).val();
-            var vers = /(\d+)\.(\d+)\.\d+\.(\d+)/g.exec(val);
-            if (vers === null)
+            var vers = /(\d+)\.(\d+)\.(\d+)\.(\d+)/g.exec(val);
+            if (vers === null) {
                 vers = /(\d+)\.(\d+)\.(\d+)/g.exec(val);
+                if (vers)
+                    vers.splice(3, '0');
+            }
             if (vers) {
-                vstr = 'v' + [vers[1], vers[2], vers[3]].join('.');
+                var vstr = istore.get('version.format', default_version_fmt) || '';
+                vstr = vstr.replace('${major}', vers[1]);
+                vstr = vstr.replace('${minor}', vers[2]);
+                vstr = vstr.replace('${platform}', vers[3]);
+                vstr = vstr.replace('${build}', vers[4]);
+                console.log(vstr);
                 $("input[name='txtVersion']").val(vstr);
             }
         }).css({
             'width': '100%',
+        }).change();
+        $('<input type="button" value="Version Format"/>').appendTo($("input[name='txtVersion']").parent()).click(function () {
+            if ($('#version-format-dialog').length === 0) {
+                var fmt = istore.get('version.format', default_version_fmt);
+                $('<div id="version-format-dialog" title="设置版本格式">' +
+                  '  <p class="validateTips">可用的变量：${major}, ${minor}, ${platform}, ${build}</p>' +
+                  '  <form>' +
+                  '  <fieldset>' +
+                  '    <label for="name">格式</label>' +
+                  '    <input type="text" name="format" id="format" class="text ui-widget-content ui-corner-all">' +
+                  '  </fieldset>' +
+                  '  </form>' +
+                  '</div>').appendTo(document.body).find('input#format').css({
+                    'width':  '300',
+                }).val(fmt);
+            }
+            $('#version-format-dialog').dialog({
+                autoOpen: true,
+                width: 400,
+                modal: true,
+                buttons: {
+                    '默认': function() {
+                        format.value = default_version_fmt;
+                        istore.set('version.format', default_version_fmt);
+                    },
+                    '确定': function() {
+                        if (format.value != fmt) {
+                            console.log('Set version format to: ' + format.value);
+                            istore.set('version.format', format.value);
+                            pkgInputs.change();
+                        }
+                        $(this).dialog('close');
+                    },
+                    '关闭': function() {
+                        $(this).dialog('close');
+                    }
+                }
+            });
         });
         // release package
         $('input#txtReleasePath').css({
