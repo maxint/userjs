@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     9
+// @version     10
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v10
+//  - Fix bug of loading failed in 360 browser.
+//
 // v9
 //  - Lazy load jQuery UI when really needed.
 //  - Fix bug: unable to delete ID.
@@ -82,7 +85,7 @@
 // ==/UserScript==
 
 // a function that loads jQuery and calls a callback function when jQuery has finished loading
-; (function (callback) {
+; (function (callback, safe) {
     var callback2 = function (jQuery_old, jQuery) {
         //Firefox supports
         console.log('Using jquery ' + jQuery().jquery);
@@ -93,13 +96,19 @@
         var script = document.createElement("script");
         script.type = "text/javascript";
         script.src = "//apps.bdimg.com/libs/jquery/2.1.1/jquery.min.js";
-        var dollar;
-        if (typeof($) != "undefined") dollar = $;
-        script.addEventListener('load', function () {
-            var jq = jQuery.noConflict();
-            $ = dollar;
-            callback2($, jq);
-        });
+        if (safe) {
+            var cb = document.createElement("script");
+            cb.type = "text/javascript";
+            cb.textContent = "var jq = jQuery.noConflict();(" + callback.toString() + ")($, jq, window);";
+            script.addEventListener('load', function() {
+                document.head.appendChild(cb);
+            });
+        } else {
+            script.addEventListener('load', function () {
+                var jq = jQuery.noConflict();
+                callback2($, jq);
+            });
+        }
         document.head.appendChild(script);
     } else {
         setTimeout(function () {
@@ -218,7 +227,7 @@
             });
         }).click();
     } else if (subpath == '/projectManage/ProjectDelivery/delivery_codingreport_update.asp') {
-        console.log('delivery');
+        console.log('delivery coding report');
         var id = $('#projectid').val();
         var istore = new IStorage('project/' + id);
         var dict = {
@@ -231,6 +240,9 @@
             console.log('window unload');
             storeValues(dict, istore);
         });
+    } else if (subpath == '/projectManage/ProjectDelivery/delivery_plan.asp') {
+        var d = new Date();
+        $('input#DeliverDate').val(d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate());
     } else if (subpath == '/projectManage/ProjectOther/addRelease.asp') {
         console.log('addRelease');
         var istore = new IStorage('addRelease');
@@ -409,14 +421,14 @@
         $('<input type="button" value="Version Format"/>').appendTo($("input[name='txtVersion']").parent()).click(function () {
             if ($('#version-format-dialog').length === 0) {
                 var fmt = istore.get('version.format', default_version_fmt);
-                $('<div id="version-format-dialog" title="设置版本格式">' +
-                  '  <p class="validateTips">可用的变量：${major}, ${minor}, ${platform}, ${build}</p>' +
-                  '  <form>' +
-                  '  <fieldset>' +
-                  '    <label for="name">格式</label>' +
-                  '    <input type="text" name="format" id="format" class="text ui-widget-content ui-corner-all">' +
-                  '  </fieldset>' +
-                  '  </form>' +
+                $('<div id="version-format-dialog" title="设置版本格式">'
+                  '  <p class="validateTips">可用的变量：${major}, ${minor}, ${platform}, ${build}</p>'
+                  '  <form>'
+                  '  <fieldset>'
+                  '    <label for="name">格式</label>'
+                  '    <input type="text" name="format" id="format" class="text ui-widget-content ui-corner-all">'
+                  '  </fieldset>'
+                  '  </form>'
                   '</div>').appendTo(document.body).find('input#format').css({
                     'width':  '300',
                 }).val(fmt);
@@ -458,19 +470,19 @@
         });
         // related project table
         $(function () {
-            var table = $('<table>' +
-                          '<thead><tr style="width:10px">' +
-                          '<td><input id="selectAllIDs" type="checkbox"></td><td style="width:40px">ID</td><td>Name</td><td style="width:60px">Operation</td>' +
-                          '</tr></thead>' +
-                          '<tbody></tbody>' +
-                          '<tfoot>' +
-                          '<tr><td/>' +
-                          '<td><input id="inputID" type="text" maxlength="4" size="4"/></td>' +
-                          '<td id="inputIDtxt" class="projIdName">Clicking "Add" to add item</td>' +
-                          '<td><input id="addID" type="button" value="Add" disabled="true"/></td></tr>' +
-                          '<tr><td/><td/><td>Clear all saved data</td>' +
-                          '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>' +
-                          '</tfoot>' +
+            var table = $('<table>'
+                          '<thead><tr style="width:10px">'
+                          '<td><input id="selectAllIDs" type="checkbox"></td><td style="width:40px">ID</td><td>Name</td><td style="width:60px">Operation</td>'
+                          '</tr></thead>'
+                          '<tbody></tbody>'
+                          '<tfoot>'
+                          '<tr><td/>'
+                          '<td><input id="inputID" type="text" maxlength="4" size="4"/></td>'
+                          '<td id="inputIDtxt" class="projIdName">Clicking "Add" to add item</td>'
+                          '<td><input id="addID" type="button" value="Add" disabled="true"/></td></tr>'
+                          '<tr><td/><td/><td>Clear all saved data</td>'
+                          '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>'
+                          '</tfoot>'
                           '</table>').css({ width: '100%' });
             $('input#btnCheckReleatedProject').after('<div></div>').next().after(table);
             // update check states of check boxes
@@ -491,7 +503,7 @@
                     console.log('Selected: ' + selected);
                     $(':checkbox', table).prop('checked', false);
                     for (var i=0; i < selected.length; ++i) {
-                        var id = selected[i]; 
+                        var id = selected[i];
                         if (!idmgr.contains(id)) {
                             idmgr.check(id, function (id, name) {
                                 if (name) {
@@ -516,10 +528,10 @@
                         var id = keys[i];
                         if (checkID(id)) {
                             var val = data[id];
-                            $('<tr id=proj_' + id + '>' +
-                              '<td><input type="checkbox"></td>' +
-                              '<td>' + id + '</td>' +
-                              '<td class="projIdName">' + val.name + '</td>' +
+                            $('<tr id=proj_' + id + '>'
+                              '<td><input type="checkbox"></td>'
+                              '<td>' + id + '</td>'
+                              '<td class="projIdName">' + val.name + '</td>'
                               '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
                         }
                     }
@@ -592,4 +604,4 @@
             height: '80px',
         });
     }
-});
+}, true);
