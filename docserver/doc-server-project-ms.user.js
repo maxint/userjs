@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     10
+// @version     10.1
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -421,14 +421,14 @@
         $('<input type="button" value="Version Format"/>').appendTo($("input[name='txtVersion']").parent()).click(function () {
             if ($('#version-format-dialog').length === 0) {
                 var fmt = istore.get('version.format', default_version_fmt);
-                $('<div id="version-format-dialog" title="设置版本格式">'
-                  '  <p class="validateTips">可用的变量：${major}, ${minor}, ${platform}, ${build}</p>'
-                  '  <form>'
-                  '  <fieldset>'
-                  '    <label for="name">格式</label>'
-                  '    <input type="text" name="format" id="format" class="text ui-widget-content ui-corner-all">'
-                  '  </fieldset>'
-                  '  </form>'
+                $('<div id="version-format-dialog" title="设置版本格式">' +
+                  '  <p class="validateTips">可用的变量：${major}, ${minor}, ${platform}, ${build}</p>' +
+                  '  <form>' +
+                  '  <fieldset>' +
+                  '    <label for="name">格式</label>' +
+                  '    <input type="text" name="format" id="format" class="text ui-widget-content ui-corner-all">' +
+                  '  </fieldset>' +
+                  '  </form>' +
                   '</div>').appendTo(document.body).find('input#format').css({
                     'width':  '300',
                 }).val(fmt);
@@ -470,19 +470,19 @@
         });
         // related project table
         $(function () {
-            var table = $('<table>'
-                          '<thead><tr style="width:10px">'
-                          '<td><input id="selectAllIDs" type="checkbox"></td><td style="width:40px">ID</td><td>Name</td><td style="width:60px">Operation</td>'
-                          '</tr></thead>'
-                          '<tbody></tbody>'
-                          '<tfoot>'
-                          '<tr><td/>'
-                          '<td><input id="inputID" type="text" maxlength="4" size="4"/></td>'
-                          '<td id="inputIDtxt" class="projIdName">Clicking "Add" to add item</td>'
-                          '<td><input id="addID" type="button" value="Add" disabled="true"/></td></tr>'
-                          '<tr><td/><td/><td>Clear all saved data</td>'
-                          '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>'
-                          '</tfoot>'
+            var table = $('<table>' +
+                          '<thead><tr style="width:10px">' +
+                          '<td><input id="selectAllIDs" type="checkbox"></td><td style="width:40px">ID</td><td>Name</td><td style="width:60px">Operation</td>' +
+                          '</tr></thead>' +
+                          '<tbody></tbody>' +
+                          '<tfoot>' +
+                          '<tr><td/>' +
+                          '<td><input id="inputID" type="text" maxlength="4" size="4"/></td>' +
+                          '<td id="inputIDtxt" class="projIdName">Clicking "Add" to add item</td>' +
+                          '<td><input id="addID" type="button" value="Add" disabled="true"/></td></tr>' +
+                          '<tr><td/><td/><td>Clear all saved data</td>' +
+                          '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>' +
+                          '</tfoot>' +
                           '</table>').css({ width: '100%' });
             $('input#btnCheckReleatedProject').after('<div></div>').next().after(table);
             // update check states of check boxes
@@ -528,10 +528,10 @@
                         var id = keys[i];
                         if (checkID(id)) {
                             var val = data[id];
-                            $('<tr id=proj_' + id + '>'
-                              '<td><input type="checkbox"></td>'
-                              '<td>' + id + '</td>'
-                              '<td class="projIdName">' + val.name + '</td>'
+                            $('<tr id=proj_' + id + '>' +
+                              '<td><input type="checkbox"></td>' +
+                              '<td>' + id + '</td>' +
+                              '<td class="projIdName">' + val.name + '</td>' +
                               '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
                         }
                     }
