@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     10.1
+// @version     11
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,10 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v11
+//  - Disable the target onchange event and select the last target by default
+//    in http://doc-server/HRInfo/TrainingSpace/FeedbackEdit.asp.
+//
 // v10
 //  - Fix bug of loading failed in 360 browser.
 //
@@ -169,20 +173,20 @@
     }
 
     // fill input values
-    function fillValues(dict, istore) {
-        for (var key in dict) {
-            if (dict.hasOwnProperty(key)) {
-                var elem = dict[key];
+    function fillValues(key_id_pairs, istore) {
+        for (var key in key_id_pairs) {
+            if (key_id_pairs.hasOwnProperty(key)) {
+                var elem = key_id_pairs[key];
                 if (!elem.val())
                     elem.val(istore.get(key, ''));
             }
         }
     }
     // save input values
-    function storeValues(dict, istore) {
-        for (var key in dict) {
-            if (dict.hasOwnProperty(key)) {
-                istore.set(key, dict[key].val());
+    function storeValues(key_id_pairs, istore) {
+        for (var key in key_id_pairs) {
+            if (key_id_pairs.hasOwnProperty(key)) {
+                istore.set(key, key_id_pairs[key].val());
             }
         }
     }
@@ -230,15 +234,15 @@
         console.log('delivery coding report');
         var id = $('#projectid').val();
         var istore = new IStorage('project/' + id);
-        var dict = {
+        var key_id_pairs = {
             'svn_path': $('input#SourceCodePath'),
             'last_tag': $('input#SOSLabel'),
             'hzpm_notes': $('textarea#hzpm_notes'),
         };
-        fillValues(dict, istore);
+        fillValues(key_id_pairs, istore);
         $(window).unload(function () {
             console.log('window unload');
-            storeValues(dict, istore);
+            storeValues(key_id_pairs, istore);
         });
     } else if (subpath == '/projectManage/ProjectDelivery/delivery_plan.asp') {
         var d = new Date();
@@ -330,7 +334,7 @@
                 $(this).html('请输入递交包文件名，支持多个文件一起提交，每行一个文件名。');
             });
             // fill previous data
-            var dict = {
+            var key_id_pairs = {
                 'version': $("input[name='txtVersion']"),
                 'releasepath': $('input#txtReleasePath'),
                 'package': $('input#txtDeliveryPackage'),
@@ -338,11 +342,11 @@
                 'relatedProjectID': $("input[name='txtReleaseReleatedProject']"),
                 'note': $('textarea#txtNotes'),
             };
-            fillValues(dict, istore);
+            fillValues(key_id_pairs, istore);
             // save result before close window
             $(window).unload(function () {
                 console.log('window closing');
-                storeValues(dict, istore);
+                storeValues(key_id_pairs, istore);
                 idmgr.save();
             });
             // submit
@@ -603,5 +607,9 @@
             width: '100%',
             height: '80px',
         });
+    } else if (subpath == '/HRInfo/TrainingSpace/FeedbackEdit.asp') {
+        // save all form data
+        $('form select#Target').removeAttr('onchange').find('option:last').attr('selected', 'selected');
+        console.log('Select the last option and remove onchange event of forms');
     }
 }, true);
