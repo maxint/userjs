@@ -249,6 +249,7 @@
         }).click();
         // show release to
         $('<input type="button" value="Show Release To"/>').insertBefore($("input[type='button']").first()).click(function (){
+            this.disabled = true;
             $('table.ListTable tbody tr.status_1 td:nth-child(4)').each(function (index, elem) {
                 var a = elem.getElementsByTagName('a')[0];
                 var id = a.innerHTML;
