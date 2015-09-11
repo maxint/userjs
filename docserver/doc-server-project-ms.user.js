@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     11
+// @version     12
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v12
+//  - Add "Show Release To" button to show names of "release to" projects.
+//
 // v11
 //  - Disable the target onchange event and select the last target by default
 //    in http://doc-server/HRInfo/TrainingSpace/FeedbackEdit.asp.
@@ -196,6 +199,20 @@
         return /^\d{4,5}$/.test(id);
     }
 
+    // query id
+    function queryID(id, callback) {
+        var url = '../ProjectDelivery/delivery_releated_project_list.asp';
+        $.get(url, {projid: id}, function (data, status) {
+            var name = $(data).find('td:nth-child(2)').text();
+            if (status == 'success' && name !== "" && callback) {
+                proj_status = $(data).find('td:nth-child(3)').text();
+                callback(id, name, proj_status);
+            } else {
+                callback(id);
+            }
+        });
+    }
+
     // operate w.r.t. sub path
     var subpath = window.location.pathname;
     if (subpath == '/login.asp') {
@@ -222,7 +239,7 @@
         }
         // invert table row
         $('<input type="button" value="Invert Rows"/>').insertBefore($("input[type='button']")).click(function () {
-            $('table.ListTable tbody').each(function (elem, index) {
+            $('table.ListTable tbody').each(function (index, elem) {
                 var arr = $.makeArray($("tr", this).detach());
                 var th = arr.shift();
                 arr.reverse();
@@ -230,6 +247,16 @@
                 $(this).append(arr);
             });
         }).click();
+        // show release to
+        $('<input type="button" value="Show Release To"/>').insertBefore($("input[type='button']").first()).click(function (){
+            $('table.ListTable tbody tr.status_1 td:nth-child(4)').each(function (index, elem) {
+                var a = elem.getElementsByTagName('a')[0];
+                var id = a.innerHTML;
+                queryID(id, function (id, name, proj_status) {
+                    a.innerHTML = name + ' (' + id + ')';
+                });
+            });
+        });
     } else if (subpath == '/projectManage/ProjectDelivery/delivery_codingreport_update.asp') {
         console.log('delivery coding report');
         var id = $('#projectid').val();
@@ -303,16 +330,7 @@
             };
             this.check = function (id, callback) {
                 if (checkID(id)) {
-                    var url = '../ProjectDelivery/delivery_releated_project_list.asp';
-                    $.get(url, {projid: id}, function (data, status) {
-                        var name = $(data).find('td:nth-child(2)').text();
-                        if (status == 'success' && name !== "" && callback) {
-                            proj_status = $(data).find('td:nth-child(3)').text();
-                            callback(id, name, proj_status);
-                        } else {
-                            callback(id);
-                        }
-                    });
+                    queryID(id, callback);
                 } else {
                     callback();
                 }
