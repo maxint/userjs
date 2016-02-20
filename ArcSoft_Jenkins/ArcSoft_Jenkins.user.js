@@ -50,7 +50,7 @@
             if (val !== null)
                 return val;
             else
-                return def || null;
+                return def !== undefined ? def : null;
         };
         this.set = function (key, val) {
             window.localStorage.setItem(addpref(key), val);
@@ -72,13 +72,20 @@
         if (!condition) {
             throw message || "Assertion failed";
         }
-    }    // fill input values
+    } 
+    // fill input values
     function fillValues(key_id_pairs, istore) {
         for (var key in key_id_pairs) {
             if (key_id_pairs.hasOwnProperty(key)) {
                 var elem = key_id_pairs[key];
-                if (!elem.val())
-                    elem.val(istore.get(key, ''));
+                var tagName = elem.type;
+                if (tagName === 'checkbox') {
+                    elem.checked = istore.get(key, 'false') == 'true';
+                } else if (tagName === 'select-one') {
+                    elem.value = istore.get(key, '');
+                } else if (!elem.value) {
+                    elem.value = istore.get(key, '');
+                }
             }
         }
     }
@@ -86,21 +93,26 @@
     function storeValues(key_id_pairs, istore) {
         for (var key in key_id_pairs) {
             if (key_id_pairs.hasOwnProperty(key)) {
-                istore.set(key, key_id_pairs[key].val());
+                var elem = key_id_pairs[key];
+                if (elem.type == 'checkbox') {
+                    istore.set(key, elem.checked);
+                } else {
+                    istore.set(key, elem.value);
+                }
             }
         }
     }
     // operate w.r.t. sub path
     var subpath = window.location.pathname;
-    console.log(subpath);
+    console.log('Subpath: ' + subpath);
     if (/jenkins\/job\/[\w_]*\/build\b/.test(subpath)) {
+        console.log('Auto save all fields in this page');
         var istore = new IStorage('project/build');
         var inputNames = $('input[type="hidden"][name="name"]');
-        var inputValues = $('input.setting-input[name="value"]');
-        assert(inputNames.length == inputValues.length);
+        var inputValues = inputNames.next();
         var pairs = {};
         for (var i = 0; i < inputNames.length; ++i) {
-            pairs[inputNames[i].value] = $(inputValues[i]);
+            pairs[inputNames[i].value] = inputValues[i];
         }
         fillValues(pairs, istore);
         $(window).unload(function () {
