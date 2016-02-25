@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     13
+// @version     13.1
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -12,7 +12,7 @@
 // @Note
 // v13
 //  - Do not "Invert Rows" by default.
-//  - Confirm project id's by comma when input.
+//  - Confirm project id's by period when input.
 //
 // v12
 //  - Add "Show Release To" button to show names of "release to" projects.
@@ -374,12 +374,6 @@
             });
             // submit
             $('#btnSubmit').removeAttr('onclick').click(function () {
-                $("input[name='txtReleaseReleatedProject']").each(function() {
-                    var s = this.value.trim();
-                    console.log(s);
-                    if (s.length > 0 && s[s.length-1] === ',')
-                        $(this).val(s.substr(0, s.length-1));
-                });
                 // check form
                 console.log('checking form ...');
                 if (!(function () {
@@ -517,7 +511,7 @@
                           '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>' +
                           '</tfoot>' +
                           '</table>').css({ width: '100%' });
-            $('input#btnCheckReleatedProject').after('<div class="info">多个项目号以逗号分隔，当手动输入时以逗号结尾来确认。</div>').next().after(table);
+            $('input#btnCheckReleatedProject').after('<div class="info">多个项目号以逗号分隔，当手动输入时以句号结尾。</div>').next().after(table);
             // update check states of check boxes
             var updateCheckBoxes = function() {
                 var checked = table.find('tbody input:checked').length;
@@ -529,10 +523,7 @@
                 });
             };
             var selectRelatedProjects = function(s) {
-                s = s.trim();
-                if (s.length > 0 && s[0] === ',') s = s.substr(1, s.length);
-                if (s.length > 0 && s[s.length-1] === ',') s = s.substr(0, s.length-1);
-                var selected = s.split(',');
+                var selected = s.trim().split(',');
                 var obj = $("input[name='txtReleaseReleatedProject']");
                 if (s.length === 0 || selected.every(checkID)) {
                     console.log('Selected: ' + selected);
@@ -554,13 +545,17 @@
                     updateCheckBoxes();
                     obj.css({ 'background-color': 'transparent' });
                 } else {
-                    obj.css({ 'background-color': "#F00" });
+                    obj.css({ 'background-color': "#FAA" });
                 }
             };
             // detete id input box
             var projectIdInput = $("input[name='txtReleaseReleatedProject']").keyup(function () {
                 var s = this.value.trim();
-                if (s.length > 0 && s[s.length-1] !== ',') return;
+                if (s.length > 0) {
+                    if (s[s.length-1] !== '.') return;
+                    s = s.substr(0, s.length-1);
+                    this.value = s;
+                }
                 selectRelatedProjects(s);
             });
             idmgr.change(function (data) {
@@ -587,9 +582,8 @@
                 var id = $(this).parent().prev().prev().text();
                 console.log('Delete: ' + id);
                 // remove id from selected input
-                var selected = projectIdInput.val();
-                selected = selected.replace(id + ',', '');
-                projectIdInput.val(selected);
+                var selected = projectIdInput.val().trim().split(',').remove(id);
+                projectIdInput.val(selected.join(','));
                 idmgr.remove(id);
             });
             table.delegate(':checkbox', 'click', function() {
@@ -597,7 +591,7 @@
                 table.find('tbody input:checked').parent().next().each(function() {
                     ids.push($(this).text());
                 });
-                projectIdInput.val(ids.join(',') + ',');
+                projectIdInput.val(ids.join(','));
                 updateCheckBoxes();
             }).delegate('td.projIdName', 'click', function () {
                 if ($(this).find('input').length) return;
