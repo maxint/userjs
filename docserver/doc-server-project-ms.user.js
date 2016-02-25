@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     12
+// @version     13
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,10 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v13
+//  - Do not "Invert Rows" by default.
+//  - Confirm project id's by comma when input.
+//
 // v12
 //  - Add "Show Release To" button to show names of "release to" projects.
 //
@@ -246,7 +250,7 @@
                 arr.unshift(th);
                 $(this).append(arr);
             });
-        }).click();
+        });
         // show release to
         $('<input type="button" value="Show Release To"/>').insertBefore($("input[type='button']").first()).click(function (){
             this.disabled = true;
@@ -370,6 +374,12 @@
             });
             // submit
             $('#btnSubmit').removeAttr('onclick').click(function () {
+                $("input[name='txtReleaseReleatedProject']").each(function() {
+                    var s = this.value.trim();
+                    console.log(s);
+                    if (s.length > 0 && s[s.length-1] === ',')
+                        $(this).val(s.substr(0, s.length-1));
+                });
                 // check form
                 console.log('checking form ...');
                 if (!(function () {
@@ -422,7 +432,7 @@
         // update version
         var default_version_fmt = '${major}.${minor}.${platform}.${build}';
         var pkgInputs = $('#txtDeliveryPackage,#txtDeliveryPackages').change(function () {
-            var val = $(this).val();
+            var val = this.value;
             var vers = /(\d+)\.(\d+)\.(\d+)\.(\d+)/g.exec(val);
             if (vers === null) {
                 vers = /(\d+)\.(\d+)\.(\d+)/g.exec(val);
@@ -507,7 +517,7 @@
                           '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>' +
                           '</tfoot>' +
                           '</table>').css({ width: '100%' });
-            $('input#btnCheckReleatedProject').after('<div></div>').next().after(table);
+            $('input#btnCheckReleatedProject').after('<div class="info">多个项目号以逗号分隔，当手动输入时以逗号结尾来确认。</div>').next().after(table);
             // update check states of check boxes
             var updateCheckBoxes = function() {
                 var checked = table.find('tbody input:checked').length;
@@ -518,11 +528,13 @@
                         this.checked = checked == total && total !== 0;
                 });
             };
-            // detete id input box
-            var projectIdInput = $("input[name='txtReleaseReleatedProject']").keyup(function () {
-                var val = this.value.trim();
-                var selected = val.split(',');
-                if (val === '' || selected.every(checkID)) {
+            var selectRelatedProjects = function(s) {
+                s = s.trim();
+                if (s.length > 0 && s[0] === ',') s = s.substr(1, s.length);
+                if (s.length > 0 && s[s.length-1] === ',') s = s.substr(0, s.length-1);
+                var selected = s.split(',');
+                var obj = $("input[name='txtReleaseReleatedProject']");
+                if (s.length === 0 || selected.every(checkID)) {
                     console.log('Selected: ' + selected);
                     $(':checkbox', table).prop('checked', false);
                     for (var i=0; i < selected.length; ++i) {
@@ -537,9 +549,19 @@
                         $('#proj_' + id + ' :checkbox', table).prop('checked', true);
                     }
                     // move checked IDs to the front
-                    $('tbody input:checked', table).parent().parent().detach().prependTo($('tbody', table));
+                    if (selected.length !== 0)
+                        $('tbody input:checked', table).parent().parent().detach().prependTo($('tbody', table));
+                    updateCheckBoxes();
+                    obj.css({ 'background-color': 'transparent' });
+                } else {
+                    obj.css({ 'background-color': "#F00" });
                 }
-                updateCheckBoxes();
+            };
+            // detete id input box
+            var projectIdInput = $("input[name='txtReleaseReleatedProject']").keyup(function () {
+                var s = this.value.trim();
+                if (s.length > 0 && s[s.length-1] !== ',') return;
+                selectRelatedProjects(s);
             });
             idmgr.change(function (data) {
                 table.find('tbody').each(function () {
@@ -558,7 +580,7 @@
                               '<td><input id="delID" type="button" value="Del"/></td></tr>').appendTo($(this));
                         }
                     }
-                    projectIdInput.keyup();
+                    selectRelatedProjects(projectIdInput.val());
                 });
             }).load();
             table.find('tbody').delegate('input#delID', 'click', function () {
@@ -566,9 +588,8 @@
                 console.log('Delete: ' + id);
                 // remove id from selected input
                 var selected = projectIdInput.val();
-                selected = selected.replace(id + ',', '')
-                selected = selected.replace(id, '')
-                projectIdInput.val(selected)
+                selected = selected.replace(id + ',', '');
+                projectIdInput.val(selected);
                 idmgr.remove(id);
             });
             table.delegate(':checkbox', 'click', function() {
@@ -576,7 +597,7 @@
                 table.find('tbody input:checked').parent().next().each(function() {
                     ids.push($(this).text());
                 });
-                projectIdInput.val(ids.join(','));
+                projectIdInput.val(ids.join(',') + ',');
                 updateCheckBoxes();
             }).delegate('td.projIdName', 'click', function () {
                 if ($(this).find('input').length) return;
