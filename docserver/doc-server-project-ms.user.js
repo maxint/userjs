@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     13.1
+// @version     14
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v14
+//  - Save project data individually in "Release" page and new data copies from old one when first time access.
+//
 // v13
 //  - Do not "Invert Rows" by default.
 //  - Confirm project id's by period when input.
@@ -99,8 +102,8 @@
 ; (function (callback, safe) {
     var callback2 = function (jQuery_old, jQuery) {
         //Firefox supports
-        console.log('Using jquery ' + jQuery().jquery);
-        console.log('Runing custom script');
+        console.log('[I] Using jquery ' + jQuery().jquery);
+        console.log('[I] Runing custom script');
         callback(jQuery_old, jQuery, typeof(unsafeWindow) == "undefined" ? window : unsafeWindow);
     };
     if (typeof(jQuery) == "undefined" || jQuery.jquery != '2.1.1') {
@@ -130,20 +133,33 @@
     // helper functions
     // local storage
     var IStorage = function (prefix) {
+        var db = window.localStorage;
         var pref = prefix + '.';
         var addpref = function (key) { return pref + key; };
+        var nameRegExp = new RegExp('^' + prefix + '\\.' + '(.+)$');
+        this.prefix = prefix;
         this.get = function (key, def) {
-            var val = window.localStorage.getItem(addpref(key));
+            var val = db.getItem(addpref(key));
             if (val !== null)
                 return val;
             else
                 return def || null;
         };
         this.set = function (key, val) {
-            window.localStorage.setItem(addpref(key), val);
+            db.setItem(addpref(key), val);
+        };
+        this.remove = function (key) {
+            db.removeItem(addpref(key));
+        };
+        this.clear = function () {
+            var names = this.getNames();
+            console.log('[W] Remove all objects in "' + this.prefix + '" storage: ' + names);
+            for (var i=0; i < names.length; ++i) {
+                this.remove(names[i]);
+            }
         };
         this.flush = function () {
-            window.localStorage.clear();
+            db.clear();
         };
         this.getObject = function (key, def) {
             var val = this.get(key);
@@ -151,6 +167,34 @@
         };
         this.setObject = function (key, val) {
             this.set(key, JSON.stringify(val));
+        };
+        this.getNames = function () {
+            var names = [];
+            var n = db.length;
+            //console.log(nameRegExp);
+            for (var i = 0; i < n; ++i) {
+                var m = nameRegExp.exec(db.key(i));
+                if (m == null || m.length == 1) {
+                    //console.log(' ~ ' + db.key(i) + '|');
+                    continue;
+                }
+                names.push(m[1]);
+            }
+            return names;
+        };
+        this.copyFrom = function (istore) {
+            var names = this.getNames();
+            console.log('[I] Object names in "' + this.prefix + '" storage: ' + names);
+            if (names.length > 0) return;
+            names = istore.getNames();
+            console.log('[W] Copy data from "' + istore.prefix + '" storage: ' + names);
+            for (var i=0; i < names.length; ++i) {
+                var n = names[i];
+                var v = istore.get(n);
+                console.log('[W] - ' + n + ': ' + v);
+                this.set(n, v);
+            }
+            return true;
         };
     };
 
@@ -226,18 +270,18 @@
             }
         });
     } else if (subpath == '/index2014/index.asp') {
-        console.log('Index2014');
+        console.log('[I] Open new home page');
         redirectToProjectListPage($('div#headerTopDiv div a:nth-child(2)'));
     } else if (subpath == '/projectManage/ProjectList.asp') {
-        console.log('ProjectList');
+        console.log('[I] Open ProjectList page');
         addReleaseToTable($('table.ListTable'));
     } else if (subpath == '/index2014/Engineering/index.asp') {
-        console.log('Engineering');
+        console.log('[I] Open Engineering page');
         addReleaseToTable($('#workspace table:first'));
     } else if (subpath == '/projectManage/ProjectOther/ReleaseList.asp') {
-        console.log('ReleaseList');
+        console.log('[I] Open ReleaseList page');
         if (window.location.protocol == 'https:') {
-            console.log('Redirecting to http ...');
+            console.log('[W] Redirecting to http ...');
             window.location.replace(window.location.href.replace('https://', 'http://'));
             return;
         }
@@ -263,9 +307,9 @@
             });
         });
     } else if (subpath == '/projectManage/ProjectDelivery/delivery_codingreport_update.asp') {
-        console.log('delivery coding report');
+        console.log('[I] Open delivery coding report page');
         var id = $('#projectid').val();
-        var istore = new IStorage('project/' + id);
+        var istore = new IStorage('project#' + id);
         var key_id_pairs = {
             'svn_path': $('input#SourceCodePath'),
             'last_tag': $('input#SOSLabel'),
@@ -273,15 +317,19 @@
         };
         fillValues(key_id_pairs, istore);
         $(window).unload(function () {
-            console.log('window unload');
+            console.log('[I] Window unload');
             storeValues(key_id_pairs, istore);
         });
     } else if (subpath == '/projectManage/ProjectDelivery/delivery_plan.asp') {
         var d = new Date();
         $('input#DeliverDate').val(d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate());
     } else if (subpath == '/projectManage/ProjectOther/addRelease.asp') {
-        console.log('addRelease');
-        var istore = new IStorage('addRelease');
+        var proj_id = /\?proj_id=(\d{4,5})/.exec(window.location.href)[1];
+        console.log('[I] Open addRelease page with project id: ' + proj_id);
+        var istore = new IStorage('addRelease#' + proj_id);
+        // copy old data
+        //console.log(window.localStorage);istore.clear();
+        istore.copyFrom(new IStorage('addRelease'));
         // related project IDs
         var IDManager = function (db) {
             var storeid = 'IDs';
@@ -368,14 +416,14 @@
             fillValues(key_id_pairs, istore);
             // save result before close window
             $(window).unload(function () {
-                console.log('window closing');
+                console.log('[I] Window closing');
                 storeValues(key_id_pairs, istore);
                 idmgr.save();
             });
             // submit
             $('#btnSubmit').removeAttr('onclick').click(function () {
                 // check form
-                console.log('checking form ...');
+                console.log('[I] Checking form ...');
                 if (!(function () {
                     if ($("#txtReleaseType").val() == "1") {
                         //先进行校验是否填写了相关项目,如果填写了,同时校验规则 是否正确.
@@ -411,7 +459,7 @@
                 // submit
                 for (var i = 0; i < pkgs.length; ++i) {
                     var pkg = pkgs[i];
-                    console.log('submitting "' + pkg + '" ...');
+                    console.log('[I] Submitting "' + pkg + '" ...');
                     $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
                     var qstr = jq('#form1').formSerialize();
                     $.post('/projectManage/Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
@@ -439,7 +487,7 @@
                 vstr = vstr.replace('${minor}', vers[2]);
                 vstr = vstr.replace('${platform}', vers[3]);
                 vstr = vstr.replace('${build}', vers[4]);
-                console.log(vstr);
+                console.log('[I] Current version format: ' + vstr);
                 $("input[name='txtVersion']").val(vstr);
             }
         }).css({
@@ -472,7 +520,7 @@
                         },
                         '确定': function() {
                             if (format.value != fmt) {
-                                console.log('Set version format to: ' + format.value);
+                                console.log('[I] Set version format to: ' + format.value);
                                 istore.set('version.format', format.value);
                                 pkgInputs.change();
                             }
@@ -507,7 +555,7 @@
                           '<td><input id="inputID" type="text" maxlength="4" size="4"/></td>' +
                           '<td id="inputIDtxt" class="projIdName">Clicking "Add" to add item</td>' +
                           '<td><input id="addID" type="button" value="Add" disabled="true"/></td></tr>' +
-                          '<tr><td/><td/><td>Clear all saved data</td>' +
+                          '<tr><td/><td/><td>Clear all saved project IDs</td>' +
                           '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>' +
                           '</tfoot>' +
                           '</table>').css({ width: '100%' });
@@ -526,7 +574,7 @@
                 var selected = s.trim().split(',');
                 var obj = $("input[name='txtReleaseReleatedProject']");
                 if (s.length === 0 || selected.every(checkID)) {
-                    console.log('Selected: ' + selected);
+                    console.log('[I] Selected project IDs: ' + selected);
                     $(':checkbox', table).prop('checked', false);
                     for (var i=0; i < selected.length; ++i) {
                         var id = selected[i];
@@ -580,7 +628,7 @@
             }).load();
             table.find('tbody').delegate('input#delID', 'click', function () {
                 var id = $(this).parent().prev().prev().text();
-                console.log('Delete: ' + id);
+                console.log('[I] Delete project ID: ' + id);
                 // remove id from selected input
                 var selected = projectIdInput.val().trim().split(',').remove(id);
                 projectIdInput.val(selected.join(','));
@@ -628,7 +676,7 @@
             }).delegate('input#addID', 'click', function () {
                 var id = table.find('input#inputID').val();
                 var name = table.find('td#inputIDtxt').text();
-                console.log('Add: ' + id +', ' + name);
+                console.log('[I] Add project: ' + id +', ' + name);
                 idmgr.add(id, name);
             }).delegate('input#flushIDs', 'click', function () {
                 if (confirm('Delete all project IDs?')) {
@@ -644,6 +692,6 @@
     } else if (subpath == '/HRInfo/TrainingSpace/FeedbackEdit.asp') {
         // save all form data
         $('form select#Target').removeAttr('onchange').find('option:last').attr('selected', 'selected');
-        console.log('Select the last option and remove onchange event of forms');
+        console.log('[I] Select the last option and remove onchange event of forms');
     }
 }, true);
