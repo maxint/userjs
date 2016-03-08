@@ -3,7 +3,7 @@
 // @namespace   http://maxint.github.io
 // @description Save forms etc.
 // @include     http://abs02/jenkins/job/*/build*
-// @version     1
+// @version     2
 // @grant       none
 // ==/UserScript==
 //
@@ -72,17 +72,20 @@
         if (!condition) {
             throw message || "Assertion failed";
         }
-    } 
+    }
     // fill input values
     function fillValues(key_id_pairs, istore) {
         for (var key in key_id_pairs) {
             if (key_id_pairs.hasOwnProperty(key)) {
                 var elem = key_id_pairs[key];
-                var tagName = elem.type;
-                if (tagName === 'checkbox') {
+                var elemType = elem.type;
+                if (elemType == undefined)
+                    console.log(elem);
+                console.log(key + ' [' + elemType + ']: ' + istore.get(key, ''));
+                if (elemType === 'checkbox' || elemType === 'radio') {
                     elem.checked = istore.get(key, 'false') == 'true';
-                } else if (tagName === 'select-one') {
-                    elem.value = istore.get(key, '');
+                } else if (elemType === 'select-one' || elemType === 'select-multiple') {
+                    $(elem).val(istore.get(key, ''));
                 } else if (!elem.value) {
                     elem.value = istore.get(key, '');
                 }
@@ -94,7 +97,7 @@
         for (var key in key_id_pairs) {
             if (key_id_pairs.hasOwnProperty(key)) {
                 var elem = key_id_pairs[key];
-                if (elem.type == 'checkbox') {
+                if (elem.type === 'checkbox' || elem.type === 'radio') {
                     istore.set(key, elem.checked);
                 } else {
                     istore.set(key, elem.value);
@@ -107,13 +110,20 @@
     console.log('Subpath: ' + subpath);
     if (/jenkins\/job\/[\w_]*\/build\b/.test(subpath)) {
         console.log('Auto save all fields in this page');
-        var istore = new IStorage('project/build');
-        var inputNames = $('input[type="hidden"][name="name"]');
-        var inputValues = inputNames.next();
+        var projName = $('h1').get(0).innerHTML;
+        projName = projName.substr(8, projName.length-8);
+        var istore = new IStorage('project/build/' + projName);
         var pairs = {};
-        for (var i = 0; i < inputNames.length; ++i) {
-            pairs[inputNames[i].value] = inputValues[i];
-        }
+        $("form[name='parameters'] :input[name$='value']").each(function() {
+            var name = this.name;
+            if (name.endsWith('.value')) {
+                name = name.substr(0, name.length-6) + '.' + this.value;
+            } else {
+                name = $(this).prev().val();
+            }
+            //console.log(this); console.log(name);
+            pairs[name] = this;
+        });
         fillValues(pairs, istore);
         $(window).unload(function () {
             console.log('window unload');
