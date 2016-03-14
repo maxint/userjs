@@ -10,13 +10,14 @@
 
 // a function that loads jQuery and calls a callback function when jQuery has finished loading
 ; (function (callback, safe) {
+    "use strict";
     var callback2 = function (jQuery_old, jQuery) {
         //Firefox supports
         console.log('Using jquery ' + jQuery().jquery);
         console.log('Runing custom script');
-        callback(jQuery_old, jQuery, typeof(unsafeWindow) == "undefined" ? window : unsafeWindow);
+        callback(jQuery_old, jQuery, typeof(unsafeWindow) === "undefined" ? window : unsafeWindow);
     };
-    if (typeof(jQuery) == "undefined" || jQuery.jquery != '2.1.1') {
+    if (typeof(jQuery) === "undefined" || jQuery.jquery !== '2.1.1') {
         var script = document.createElement("script");
         script.type = "text/javascript";
         script.src = "//apps.bdimg.com/libs/jquery/2.1.1/jquery.min.js";
@@ -40,6 +41,7 @@
         }, 30);
     }
 })(function (jq, $, window) {
+    "use strict";
     // helper functions
     // local storage
     var IStorage = function (prefix) {
@@ -47,10 +49,11 @@
         var addpref = function (key) { return pref + key; };
         this.get = function (key, def) {
             var val = window.localStorage.getItem(addpref(key));
-            if (val !== null)
+            if (val !== null) {
                 return val;
-            else
+            } else {
                 return def !== undefined ? def : null;
+            }
         };
         this.set = function (key, val) {
             window.localStorage.setItem(addpref(key), val);

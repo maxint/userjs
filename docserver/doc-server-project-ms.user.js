@@ -100,13 +100,14 @@
 
 // a function that loads jQuery and calls a callback function when jQuery has finished loading
 ; (function (callback, safe) {
+    "use strict";
     var callback2 = function (jQuery_old, jQuery) {
         //Firefox supports
         console.log('[I] Using jquery ' + jQuery().jquery);
         console.log('[I] Runing custom script');
-        callback(jQuery_old, jQuery, typeof(unsafeWindow) == "undefined" ? window : unsafeWindow);
+        callback(jQuery_old, jQuery, typeof(unsafeWindow) === "undefined" ? window : unsafeWindow);
     };
-    if (typeof(jQuery) == "undefined" || jQuery.jquery != '2.1.1') {
+    if (typeof(jQuery) === "undefined" || jQuery.jquery !== '2.1.1') {
         var script = document.createElement("script");
         script.type = "text/javascript";
         script.src = "//apps.bdimg.com/libs/jquery/2.1.1/jquery.min.js";
@@ -130,6 +131,7 @@
         }, 30);
     }
 })(function (jq, $, window) {
+    "use strict";
     // helper functions
     // local storage
     var IStorage = function (prefix) {
@@ -140,10 +142,11 @@
         this.prefix = prefix;
         this.get = function (key, def) {
             var val = db.getItem(addpref(key));
-            if (val !== null)
+            if (val !== null) {
                 return val;
-            else
+            } else {
                 return def || null;
+            }
         };
         this.set = function (key, val) {
             db.setItem(addpref(key), val);
@@ -154,7 +157,7 @@
         this.clear = function () {
             var names = this.getNames();
             console.log('[W] Remove all objects in "' + this.prefix + '" storage: ' + names);
-            for (var i=0; i < names.length; ++i) {
+            for (var i = 0; i < names.length; ++i) {
                 this.remove(names[i]);
             }
         };
@@ -174,7 +177,7 @@
             //console.log(nameRegExp);
             for (var i = 0; i < n; ++i) {
                 var m = nameRegExp.exec(db.key(i));
-                if (m == null || m.length == 1) {
+                if (m === null || m.length === 1) {
                     //console.log(' ~ ' + db.key(i) + '|');
                     continue;
                 }
