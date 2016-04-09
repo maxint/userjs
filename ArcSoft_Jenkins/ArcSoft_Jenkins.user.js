@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Jenkins
-// @version     3
+// @version     4
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description Save forms etc.
@@ -21,10 +21,10 @@
 		console.log('Runing custom script');
 		callback(jQuery_old, jQuery, typeof(unsafeWindow) === "undefined" ? window : unsafeWindow);
 	};
-	if (typeof(jQuery) === "undefined" || jQuery.jquery !== '2.1.1') {
+	if (typeof(jQuery) === "undefined" || jQuery.jquery !== '2.1.4') {
 		var script = document.createElement("script");
 		script.type = "text/javascript";
-		script.src = "//apps.bdimg.com/libs/jquery/2.1.1/jquery.min.js";
+		script.src = "//apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js";
 		if (safe) {
 			var cb = document.createElement("script");
 			cb.type = "text/javascript";
@@ -49,21 +49,34 @@
 	// helper functions
 	// local storage
 	var IStorage = function (prefix) {
+		var db = window.localStorage;
 		var pref = prefix + '.';
 		var addpref = function (key) { return pref + key; };
+		var nameRegExp = new RegExp('^' + prefix + '\\.' + '(.+)$');
+		this.prefix = prefix;
 		this.get = function (key, def) {
-			var val = window.localStorage.getItem(addpref(key));
+			var val = db.getItem(addpref(key));
 			if (val !== null) {
 				return val;
 			} else {
-				return def !== undefined ? def : null;
+				return def || null;
 			}
 		};
 		this.set = function (key, val) {
-			window.localStorage.setItem(addpref(key), val);
+			db.setItem(addpref(key), val);
+		};
+		this.remove = function (key) {
+			db.removeItem(addpref(key));
+		};
+		this.clear = function () {
+			var names = this.getNames();
+			console.log('[W] Remove all objects in "' + this.prefix + '" storage: ' + names);
+			for (var i = 0; i < names.length; ++i) {
+				this.remove(names[i]);
+			}
 		};
 		this.flush = function () {
-			window.localStorage.clear();
+			db.clear();
 		};
 		this.getObject = function (key, def) {
 			var val = this.get(key);
@@ -71,6 +84,34 @@
 		};
 		this.setObject = function (key, val) {
 			this.set(key, JSON.stringify(val));
+		};
+		this.getNames = function () {
+			var names = [];
+			var n = db.length;
+			//console.log(nameRegExp);
+			for (var i = 0; i < n; ++i) {
+				var m = nameRegExp.exec(db.key(i));
+				if (m === null || m.length === 1) {
+					//console.log(' ~ ' + db.key(i) + '|');
+					continue;
+				}
+				names.push(m[1]);
+			}
+			return names;
+		};
+		this.copyFrom = function (istore) {
+			var names = this.getNames();
+			console.log('[I] Object names in "' + this.prefix + '" storage: ' + names);
+			if (names.length > 0) return;
+			names = istore.getNames();
+			console.log('[W] Copy data from "' + istore.prefix + '" storage: ' + names);
+			for (var i=0; i < names.length; ++i) {
+				var n = names[i];
+				var v = istore.get(n);
+				console.log('[W] - ' + n + ': ' + v);
+				this.set(n, v);
+			}
+			return true;
 		};
 	};
 
@@ -82,29 +123,31 @@
 	}
 	// fill input values
 	function fillValues(key_id_pairs, istore) {
+		console.log('[I] Fill field values');
 		for (var key in key_id_pairs) {
 			if (key_id_pairs.hasOwnProperty(key)) {
 				var elem = key_id_pairs[key];
 				var elemType = elem.type;
 				if (elemType == undefined)
-					console.log(elem);
-				console.log(key + ' [' + elemType + ']: ' + istore.get(key, ''));
-				var new_val = istore.get(key);
+					console.log('[W] Undefined element type of field:' + elem);
+				// debug
+				console.log('[D] - ' + key + ' [' + elemType + ']: ' + istore.get(key, ''));
+				var newValue = istore.get(key);
+				if (newValue == null)
+					continue
 				if (elemType === 'checkbox' || elemType === 'radio') {
-					if (new_val !== undefined)
-						elem.checked = new_val == 'true';
+					elem.checked = newValue == 'true';
 				} else if (elemType === 'select-one' || elemType === 'select-multiple') {
-					if (new_val !== undefined)
-						$(elem).val(new_val);
+					$(elem).val(newValue);
 				} else {
-					if (new_val !== undefined)
-						$(elem).val(new_val);
+					$(elem).val(newValue);
 				}
 			}
 		}
 	}
 	// save input values
 	function storeValues(key_id_pairs, istore) {
+		console.log('[I] Save field values');
 		for (var key in key_id_pairs) {
 			if (key_id_pairs.hasOwnProperty(key)) {
 				var elem = key_id_pairs[key];
@@ -120,12 +163,11 @@
 	var subpath = window.location.pathname;
 	console.log('Subpath: ' + subpath);
 	if (/jenkins\/job\/[\w_]*\/build\b/.test(subpath)) {
-		console.log('Auto save all fields in this page');
 		var projName = $('h1').get(0).innerHTML;
 		projName = projName.substr(8, projName.length-8);
 		var istore = new IStorage('project/build/' + projName);
 		var pairs = {};
-		$("form[name='parameters'] :input[name$='value']").each(function() {
+		$("table.parameters :input[name$='value']").each(function() {
 			var name = this.name;
 			if (name.endsWith('.value')) {
 				name = name.substr(0, name.length-6) + '.' + this.value;
@@ -136,9 +178,25 @@
 			pairs[name] = this;
 		});
 		fillValues(pairs, istore);
+		var saveWhenUnload = true;
 		$(window).unload(function () {
-			console.log('window unload');
-			storeValues(pairs, istore);
+			console.log('[I] window unload');
+			if (saveWhenUnload) {
+				storeValues(pairs, istore);
+			}
+		});
+		// add reset button
+		$("table.parameters tbody:last input:last-child").after(
+				'<span name="Submit" class="yui-button yui-submit-button submit-button primary">' +
+				'<span class="first-child">' +
+				'<button title="Reset all saved data!" type="button">Reset</button>' +
+				'</span></span>');
+		$('button:last-child').click(function() {
+			saveWhenUnload = false;
+			istore.clear();
+			window.location.reload();
 		});
 	}
 }, true);
+
+// vim: et ts=2 sts=2 sw=2
