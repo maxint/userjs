@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     14
+// @version     15
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -10,6 +10,10 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v15
+//  - Fix bug of un-selected project id.
+//  - Confirm project id input by space.
+//
 // v14
 //  - Save project data individually in "Release" page and new data copies from old one when first time access.
 //
@@ -256,7 +260,7 @@
         $.get(url, {projid: id}, function (data, status) {
             var name = $(data).find('td:nth-child(2)').text();
             if (status == 'success' && name !== "" && callback) {
-                proj_status = $(data).find('td:nth-child(3)').text();
+                var proj_status = $(data).find('td:nth-child(3)').text();
                 callback(id, name, proj_status);
             } else {
                 callback(id);
@@ -562,7 +566,7 @@
                           '<td><input id="flushIDs" type="button" value="Flush"/></td></tr>' +
                           '</tfoot>' +
                           '</table>').css({ width: '100%' });
-            $('input#btnCheckReleatedProject').after('<div class="info">多个项目号以逗号分隔，当手动输入时以句号结尾。</div>').next().after(table);
+            $('input#btnCheckReleatedProject').after('<div class="info">多个项目号以逗号分隔，当手动输入时以空格或句号结尾。</div>').next().next().after(table);
             // update check states of check boxes
             var updateCheckBoxes = function() {
                 var checked = table.find('tbody input:checked').length;
@@ -601,9 +605,10 @@
             };
             // detete id input box
             var projectIdInput = $("input[name='txtReleaseReleatedProject']").keyup(function () {
-                var s = this.value.trim();
+                var s = this.value.replace(/^\s+/, ''); // left trim
                 if (s.length > 0) {
-                    if (s[s.length-1] !== '.') return;
+                    var ch = s[s.length-1];
+                    if (ch !== '.' && ch !== ' ') return;
                     s = s.substr(0, s.length-1);
                     this.value = s;
                 }
@@ -698,3 +703,5 @@
         console.log('[I] Select the last option and remove onchange event of forms');
     }
 }, true);
+
+// vim: ts=4 sts=4 sw=4 et
