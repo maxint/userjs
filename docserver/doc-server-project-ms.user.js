@@ -1,15 +1,19 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     15
+// @version     16
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
 // @include     http://doc-server/*
 // @include     https://doc-server/*
+// @include     http://hz-delivery/ImageTECH/*
 // @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v16
+//  - Add delivery package selection in "Delivery"" page.
+//
 // v15
 //  - Fix bug of un-selected project id.
 //  - Confirm project id input by space.
@@ -136,6 +140,7 @@
     }
 })(function (jq, $, window) {
     "use strict";
+
     // helper functions
     // local storage
     var IStorage = function (prefix) {
@@ -267,6 +272,65 @@
             }
         });
     }
+    
+    // get parameter by name from URL
+    function getParameterByName(url, name, def) {
+        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+        let regex = new RegExp("[\\?&]" + name + "=([^&#]*)");
+        let results = regex.exec(url);
+        return results === null ? def : decodeURIComponent(results[1].replace(/\+/g, " "));
+    }
+    
+    if (window.location.hostname == 'hz-delivery') {
+        console.log('[I] Open hz-delivery page');
+        let is_reformat = getParameterByName(window.location.search, 'reformat');
+        if (is_reformat == null) return;
+        let pre_object = $('body > pre');
+        let html = pre_object.html();
+        let lines = html.split('<br>');
+        let item_pattern = /(\d{4})\/(\d{1,2})\/(\d{1,2})\s+(\d{1,2}):(\d{1,2})\s+(\d+)\s+<a href="([^"]+)">([^<]+)/;
+        let items = [];
+        for (let i = 0; i < lines.length; ++i) {
+            let line = lines[i].trim();
+            if (line.length == 0) {
+                continue;
+            }
+            let m = item_pattern.exec(line);
+            //console.log(line);
+            if (m !== null && /\.(zip|ZIP)$/.test(m[8])) { // only add ZIP files
+                items.push({
+                    date: new Date(m[1], m[2], m[3], m[4], m[5]),
+                    size: parseInt(m[6]),
+                    name: m[8],
+                    url: m[7],
+                });
+            }
+        }
+        // sort by date in descending order
+        items.sort(function(lhs, rhs) {
+            return lhs.date < rhs.date;
+        });
+        let max_count = Math.min(items.length, getParameterByName(window.location.search, 'max_count', 8));
+        let new_html = '<form>';
+        for (let i = 0; i < max_count; ++i) {
+            let item = items[i];
+            new_html += '<input type="radio" name="package" id="' + item.name + '">' + item.name + '<br>';
+        }
+        new_html += '</form>';
+        $('hr').remove();
+        $('h1').remove();
+        pre_object.html(new_html);
+        $(':radio:first').prop('checked', true);
+        $(':radio').click(function() {
+            //console.log(this);
+            //console.log(window.parent);
+            window.parent.postMessage(this.id, '*');
+        });
+        window.addEventListener("message", function(e) {
+            console.log(e);
+        }, false);
+        return;
+    }
 
     // operate w.r.t. sub path
     var subpath = window.location.pathname;
@@ -313,8 +377,12 @@
                 });
             });
         });
-    } else if (subpath == '/projectManage/ProjectDelivery/delivery_codingreport_update.asp') {
-        console.log('[I] Open delivery coding report page');
+    } else if (subpath == '/projectManage/ProjectDelivery/delivery_plan.asp') {
+        var d = new Date();
+        $('input#DeliverDate').val(d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate());
+    } else if (subpath == '/projectManage/ProjectDelivery/delivery_codingreport.asp' ||
+               subpath == '/projectManage/ProjectDelivery/delivery_codingreport_update.asp') {
+        console.log('[I] Open delivery page');
         var id = $('#projectid').val();
         var istore = new IStorage('project#' + id);
         var key_id_pairs = {
@@ -327,9 +395,27 @@
             console.log('[I] Window unload');
             storeValues(key_id_pairs, istore);
         });
-    } else if (subpath == '/projectManage/ProjectDelivery/delivery_plan.asp') {
-        var d = new Date();
-        $('input#DeliverDate').val(d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate());
+        // replace delivery URL
+        let delivery_href_a = $('#act_hzdelivery + a');
+        let delivery_url = delivery_href_a.attr('href');
+        let delivery_new_url = 'http:' + delivery_url.replace(/\\/g, '/');
+        delivery_href_a.attr('href', delivery_new_url);
+        delivery_new_url = delivery_new_url + '?reformat=1';
+        let delivery_frame = $('<iframe id="delivery_page" src="' + delivery_new_url + '"></iframe>').css({
+            'width': '100%',
+            'height': '100%',
+            'border': '0'
+        });
+        $('#table4').append(delivery_frame);
+        window.addEventListener("message", function(e) {
+            //console.log(e);
+            if (e.origin === 'http://hz-delivery') {
+                $('input#file_name').val(e.data);
+            }
+        }, false);
+        setTimeout(function() {
+            delivery_frame[0].contentWindow.postMessage('message from doc-server', '*');
+        }, 1000);
     } else if (subpath == '/projectManage/ProjectOther/addRelease.asp') {
         var proj_id = /\?proj_id=(\d{4,5})/.exec(window.location.href)[1];
         console.log('[I] Open addRelease page with project id: ' + proj_id);
