@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     16
+// @version     17
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -11,6 +11,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v17
+//  - Add "Delvery" and "Small Delivery" buttons to project table.
+//
 // v16
 //  - Add delivery package selection in "Delivery"" page.
 //
@@ -228,9 +231,13 @@
         var trs = table.find('tbody tr');
         trs.first().find('th:nth-child(2)').after('<th>Operations</th>');
         trs.nextAll().each(function () {
-            var id = $(this).find('td:first a:first').text();
-            var rlsUrl = 'http://doc-server/projectManage/ProjectOther/ReleaseList.asp?proj_id=' + id;
-            var link = '<a href="' + rlsUrl + '">Release</a>';
+            let id = $(this).find('td:first a:first').text();
+            let rlsUrl = 'http://doc-server/projectManage/ProjectOther/ReleaseList.asp?proj_id=' + id;
+            let dlrUrl = 'http://doc-server/projectManage/ProjectDelivery/delivery_plan.asp?keyid=0&status=20&projid=' + id;
+            let dlrUrl1 = 'http://doc-server/projectManage/ProjectDelivery/delivery_phase_plan.asp?keyid=0&status=20&projid=' + id;
+            let link = '<a title="Release" href="' + rlsUrl + '">R</a>';
+            link += ' / <a title="Delivery" href="' + dlrUrl + '">D</a>';
+            link += ' / <a title="Small Delivery" href="' + dlrUrl1 + '">SD</a>';
             $(this).find('td:nth-child(2)').after('<td>' + link + '</td>');
         });
     }
@@ -272,7 +279,7 @@
             }
         });
     }
-    
+
     // get parameter by name from URL
     function getParameterByName(url, name, def) {
         name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
@@ -280,7 +287,7 @@
         let results = regex.exec(url);
         return results === null ? def : decodeURIComponent(results[1].replace(/\+/g, " "));
     }
-    
+
     if (window.location.hostname == 'hz-delivery') {
         console.log('[I] Open hz-delivery page');
         let is_reformat = getParameterByName(window.location.search, 'reformat');
