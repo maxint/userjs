@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Jenkins
-// @version     4
+// @version     5
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description Save forms etc.
@@ -177,6 +177,7 @@
 			//console.log(this); console.log(name);
 			pairs[name] = this;
 		});
+    // save / restore
 		fillValues(pairs, istore);
 		var saveWhenUnload = true;
 		$(window).unload(function () {
