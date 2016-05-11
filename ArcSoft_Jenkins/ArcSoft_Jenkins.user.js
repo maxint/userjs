@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Jenkins
-// @version     5
+// @version     6
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description Save forms etc.
@@ -17,11 +17,14 @@
 	"use strict";
 	var callback2 = function (jQuery_old, jQuery) {
 		//Firefox supports
-		console.log('Using jquery ' + jQuery().jquery);
-		console.log('Runing custom script');
-		callback(jQuery_old, jQuery, typeof(unsafeWindow) === "undefined" ? window : unsafeWindow);
+		console.log('[I] Using jquery ' + jQuery().jquery);
+		console.log('[I] Runing custom script');
+		setTimeout(function () {
+			callback(jQuery_old, jQuery, typeof(unsafeWindow) === "undefined" ? window : unsafeWindow);
+		}, 30);
 	};
 	if (typeof(jQuery) === "undefined" || jQuery.jquery !== '2.1.4') {
+		console.log('[I] Load jquery from CDN');
 		var script = document.createElement("script");
 		script.type = "text/javascript";
 		script.src = "//apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js";
@@ -40,9 +43,7 @@
 		}
 		document.head.appendChild(script);
 	} else {
-		setTimeout(function () {
-			callback2(jQuery, jQuery);
-		}, 30);
+		callback2(jQuery, jQuery);
 	}
 })(function (jq, $, window) {
 	"use strict";
@@ -128,13 +129,13 @@
 			if (key_id_pairs.hasOwnProperty(key)) {
 				var elem = key_id_pairs[key];
 				var elemType = elem.type;
-				if (elemType == undefined)
+				if (elemType === undefined)
 					console.log('[W] Undefined element type of field:' + elem);
 				// debug
 				console.log('[D] - ' + key + ' [' + elemType + ']: ' + istore.get(key, ''));
 				var newValue = istore.get(key);
-				if (newValue == null)
-					continue
+				if (newValue === null)
+					continue;
 				if (elemType === 'checkbox' || elemType === 'radio') {
 					elem.checked = newValue == 'true';
 				} else if (elemType === 'select-one' || elemType === 'select-multiple') {
@@ -161,7 +162,7 @@
 	}
 	// operate w.r.t. sub path
 	var subpath = window.location.pathname;
-	console.log('Subpath: ' + subpath);
+	console.log('[I] Subpath: ' + subpath);
 	if (/jenkins\/job\/[\w_]*\/build\b/.test(subpath)) {
 		var projName = $('h1').get(0).innerHTML;
 		projName = projName.substr(8, projName.length-8);
@@ -177,7 +178,7 @@
 			//console.log(this); console.log(name);
 			pairs[name] = this;
 		});
-    // save / restore
+		// save / restore
 		fillValues(pairs, istore);
 		var saveWhenUnload = true;
 		$(window).unload(function () {
@@ -187,17 +188,18 @@
 			}
 		});
 		// add reset button
-		$("table.parameters tbody:last input:last-child").after(
+		$("table.parameters tbody:last tr td").append(
 				'<span name="Submit" class="yui-button yui-submit-button submit-button primary">' +
 				'<span class="first-child">' +
-				'<button title="Reset all saved data!" type="button">Reset</button>' +
+				'<button title="Reset all saved data!" type="button" id="reset_btn">Reset</button>' +
 				'</span></span>');
-		$('button:last-child').click(function() {
+		console.log($('button:last-child'));
+		$('button#reset_btn').click(function() {
 			saveWhenUnload = false;
 			istore.clear();
 			window.location.reload();
 		});
 	}
-}, true);
+}, false);
 
-// vim: et ts=2 sts=2 sw=2
+// vim: noet ts=2 sts=2 sw=2
