@@ -288,6 +288,24 @@
         return results === null ? def : decodeURIComponent(results[1].replace(/\+/g, " "));
     }
 
+    // float contact window
+    function createFloatContactWindow() {
+        console.log('[I] Create float contact window');
+        let floatDiv = $('<div id="floatContactDiv"><div>author: maxint</div><div>skype: <a href="skype:maxint_5?add">maxint_5</a></div></div>').css({
+            "position": 'absolute',
+            "background": "white",
+            "margin": "50px 20px",
+            "padding": "10px",
+        });
+        $('body').append(floatDiv);
+        $(window).scroll(function () {
+           let pos = $(document).scrollTop() + "px";
+           $('#floatContactDiv').animate({top: pos}, {duration: 1000, queue: false});
+        });
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // page routines
     if (window.location.hostname == 'hz-delivery') {
         console.log('[I] Open hz-delivery page');
         let is_reformat = getParameterByName(window.location.search, 'reformat');
@@ -356,34 +374,6 @@
     } else if (subpath == '/index2014/Engineering/index.asp') {
         console.log('[I] Open Engineering page');
         addReleaseToTable($('#workspace table:first'));
-    } else if (subpath == '/projectManage/ProjectOther/ReleaseList.asp') {
-        console.log('[I] Open ReleaseList page');
-        if (window.location.protocol == 'https:') {
-            console.log('[W] Redirecting to http ...');
-            window.location.replace(window.location.href.replace('https://', 'http://'));
-            return;
-        }
-        // invert table row
-        $('<input type="button" value="Invert Rows"/>').insertBefore($("input[type='button']")).click(function () {
-            $('table.ListTable tbody').each(function (index, elem) {
-                var arr = $.makeArray($("tr", this).detach());
-                var th = arr.shift();
-                arr.reverse();
-                arr.unshift(th);
-                $(this).append(arr);
-            });
-        });
-        // show release to
-        $('<input type="button" value="Show Release To"/>').insertBefore($("input[type='button']").first()).click(function (){
-            this.disabled = true;
-            $('table.ListTable tbody tr.status_1 td:nth-child(4)').each(function (index, elem) {
-                var a = elem.getElementsByTagName('a')[0];
-                var id = a.innerHTML;
-                queryID(id, function (id, name, proj_status) {
-                    a.innerHTML = name + ' (' + id + ')';
-                });
-            });
-        });
     } else if (subpath == '/projectManage/ProjectDelivery/delivery_plan.asp') {
         var d = new Date();
         $('input#DeliverDate').val(d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate());
@@ -423,6 +413,35 @@
         setTimeout(function() {
             delivery_frame[0].contentWindow.postMessage('message from doc-server', '*');
         }, 1000);
+    } else if (subpath == '/projectManage/ProjectOther/ReleaseList.asp') {
+        console.log('[I] Open ReleaseList page');
+        //createFloatContactWindow();
+        if (window.location.protocol == 'https:') {
+            console.log('[W] Redirecting to http ...');
+            window.location.replace(window.location.href.replace('https://', 'http://'));
+            return;
+        }
+        // invert table row
+        $('<input type="button" value="Invert Rows"/>').insertBefore($("input[type='button']")).click(function () {
+            $('table.ListTable tbody').each(function (index, elem) {
+                var arr = $.makeArray($("tr", this).detach());
+                var th = arr.shift();
+                arr.reverse();
+                arr.unshift(th);
+                $(this).append(arr);
+            });
+        });
+        // show release to
+        $('<input type="button" value="Show Release To"/>').insertBefore($("input[type='button']").first()).click(function (){
+            this.disabled = true;
+            $('table.ListTable tbody tr.status_1 td:nth-child(4)').each(function (index, elem) {
+                var a = elem.getElementsByTagName('a')[0];
+                var id = a.innerHTML;
+                queryID(id, function (id, name, proj_status) {
+                    a.innerHTML = name + ' (' + id + ')';
+                });
+            });
+        });
     } else if (subpath == '/projectManage/ProjectOther/addRelease.asp') {
         var proj_id = /\?proj_id=(\d{4,5})/.exec(window.location.href)[1];
         console.log('[I] Open addRelease page with project id: ' + proj_id);
