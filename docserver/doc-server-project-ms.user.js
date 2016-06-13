@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Project Management
-// @version     17
+// @version     18
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft project management system in http://doc-server
@@ -11,6 +11,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v18
+//  - Remove "Small Delivery" button.
+//
 // v17
 //  - Add "Delvery" and "Small Delivery" buttons to project table.
 //
@@ -233,11 +236,9 @@
         trs.nextAll().each(function () {
             let id = $(this).find('td:first a:first').text();
             let rlsUrl = 'http://doc-server/projectManage/ProjectOther/ReleaseList.asp?proj_id=' + id;
-            let dlrUrl = 'http://doc-server/projectManage/ProjectDelivery/delivery_plan.asp?keyid=0&status=20&projid=' + id;
-            let dlrUrl1 = 'http://doc-server/projectManage/ProjectDelivery/delivery_phase_plan.asp?keyid=0&status=20&projid=' + id;
+            let dlrUrl = 'http://doc-server/projectManage/ProjectDelivery/delivery_phase_plan.asp?keyid=0&status=20&projid=' + id;
             let link = '<a title="Release" href="' + rlsUrl + '">R</a>';
             link += ' / <a title="Delivery" href="' + dlrUrl + '">D</a>';
-            link += ' / <a title="Small Delivery" href="' + dlrUrl1 + '">SD</a>';
             $(this).find('td:nth-child(2)').after('<td>' + link + '</td>');
         });
     }
