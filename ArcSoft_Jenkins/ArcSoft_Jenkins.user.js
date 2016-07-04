@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name        ArcSoft Jenkins
-// @version     6
+// @version     7
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description Save forms etc.
 // @include     http://abs02/jenkins/job/*/build*
+// @include     http://abs02/jenkins/view/*/job/*/build*
 // @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/ArcSoft_Jenkins/ArcSoft_Jenkins.user.js
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/ArcSoft_Jenkins/ArcSoft_Jenkins.user.js
 // @grant       none
@@ -163,9 +164,10 @@
 	// operate w.r.t. sub path
 	var subpath = window.location.pathname;
 	console.log('[I] Subpath: ' + subpath);
-	if (/jenkins\/job\/[\w_]*\/build\b/.test(subpath)) {
+	if (/\/job\/[\w_]*\/build\b/.test(subpath)) {
 		var projName = $('h1').get(0).innerHTML;
 		projName = projName.substr(8, projName.length-8);
+		console.log('[I] Project name: ' + projName);
 		var istore = new IStorage('project/build/' + projName);
 		var pairs = {};
 		$("table.parameters :input[name$='value']").each(function() {
@@ -193,7 +195,7 @@
 				'<span class="first-child">' +
 				'<button title="Reset all saved data!" type="button" id="reset_btn">Reset</button>' +
 				'</span></span>');
-		console.log($('button:last-child'));
+		//console.log($('button:last-child'));
 		$('button#reset_btn').click(function() {
 			saveWhenUnload = false;
 			istore.clear();
