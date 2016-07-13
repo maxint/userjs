@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name        ArcSoft Project Management
-// @version     18
+// @name        ArcSoft Doc-server Plugin
+// @version     19
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
-// @description An enhancement for Arcsoft project management system in http://doc-server
+// @description An enhancement for Arcsoft office server in http://doc-server
 // @include     http://doc-server/*
 // @include     https://doc-server/*
 // @include     http://hz-delivery/ImageTECH/*
@@ -11,6 +11,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v19
+//  - Multiple-line view for attendance list.
+//
 // v18
 //  - Remove "Small Delivery" button.
 //
@@ -375,6 +378,30 @@
     } else if (subpath == '/index2014/Engineering/index.asp') {
         console.log('[I] Open Engineering page');
         addReleaseToTable($('#workspace table:first'));
+    } else if (subpath == '/hrinfo/attendance/viewRecord.asp' ||
+               subpath == '/hrinfo/attendance/viewrecord.asp') {
+        console.log('[I] Open attendance page');
+        $('table#tMainText tbody').each(function (index, elem) {
+            let titles = $("tr:first-child th", this);
+            let values = $("tr:last-child td", this);
+            $('tr', this).detach();
+            assert(titles.length == values.length);
+            let total = titles.length - 1;
+            let segment_len = 7;
+            let segment_num = total / segment_len;
+            for (let i = 0; i < segment_num; ++i) {
+                let cur_segment_len = Math.min(total - i*segment_len, segment_len);
+                let tr1 = $('<tr></tr>');
+                let tr2 = $('<tr></tr>');
+                for (let k = 0; k < cur_segment_len; ++k) {
+                    let idx = i * segment_len + k + 1;
+                    tr1.append(titles[idx]);
+                    tr2.append(values[idx]);
+                }
+                $(this).append(tr1);
+                $(this).append(tr2);
+            }
+        });
     } else if (subpath == '/projectManage/ProjectDelivery/delivery_plan.asp') {
         var d = new Date();
         $('input#DeliverDate').val(d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate());
