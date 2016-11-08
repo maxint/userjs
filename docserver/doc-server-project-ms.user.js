@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name        ArcSoft Doc-server Plugin
+// @name        ArcSoft Docserver
 // @version     19
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
