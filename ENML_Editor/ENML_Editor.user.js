@@ -1,12 +1,12 @@
-// ==UserScript==
+﻿// ==UserScript==
 // @name        ENML Editor
 // @namespace   maxint.github.io
 // @description This scripts adds a button to edit the HTML code of a note in Evernote Web
 // @include     https://www.evernote.com/Home.action#n=*
 // @include     https://app.yinxiang.com/Home.action#n=*
+// @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/ENML_Editor/ENML_Editor.user.js
+// @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/ENML_Editor/ENML_Editor.user.js
 // @version     1
-// @grant       GM_setValue
-// @grant       GM_getValue
 // ==/UserScript==
 
 /*

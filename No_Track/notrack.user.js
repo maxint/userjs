@@ -1,12 +1,12 @@
-// ==UserScript==
-// @name        No track
+﻿// ==UserScript==
+// @name        No Track
 // @version     1
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description Disable track of search engine
 // @include     https://search.yahoo.com/yhs/search*
-// @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/notrack/notrack.user.js
-// @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/notrack/notrack.user.js
+// @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/No_Track/notrack.user.js
+// @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/No_Track/notrack.user.js
 // @grant       none
 // ==/UserScript==
 

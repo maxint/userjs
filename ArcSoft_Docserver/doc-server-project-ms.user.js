@@ -1,4 +1,4 @@
-// ==UserScript==
+﻿// ==UserScript==
 // @name        ArcSoft Docserver
 // @version     19
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
@@ -7,8 +7,8 @@
 // @include     http://doc-server/*
 // @include     https://doc-server/*
 // @include     http://hz-delivery/ImageTECH/*
-// @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
-// @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/docserver/doc-server-project-ms.user.js
+// @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/ArcSoft_Docserver/doc-server-project-ms.user.js
+// @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/ArcSoft_Docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
 // v19

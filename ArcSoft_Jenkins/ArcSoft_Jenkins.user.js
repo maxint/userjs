@@ -1,4 +1,4 @@
-// ==UserScript==
+﻿// ==UserScript==
 // @name        ArcSoft Jenkins
 // @version     7
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
