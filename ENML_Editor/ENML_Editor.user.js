@@ -49,18 +49,17 @@ var getScript = function(url, funcToRun) {
 // a function that loads jQuery and calls a callback function when jQuery has loaded
 var jQueryCall = function (callback) {
 	"use strict";
-	if (typeof(jQuery) === "undefined" || jQuery.jquery >= '2.1') {
+	let callOnReady = function (jq) {
+		setTimeout(function () {
+			callback(jq, window);
+		}, 2000);
+	};
+	if (typeof(jQuery) === "undefined" || jQuery.jquery < '2.2') {
 		getScript("//cdn.bootcss.com/jquery/2.2.4/jquery.min.js", function() {
-			var jq = jQuery.noConflict();
-			setTimeout(function () {
-				callback($, jq, window);
-			}, 500);
+			callOnReady(jQuery.noConflict());
 		});
 	} else {
-		//Firefox supports
-		setTimeout(function () {
-			callback(jQuery, jQuery, window);
-		}, 500);
+		callOnReady(jQuery);
 	}
 };
 
@@ -287,18 +286,19 @@ var prepareTextArea = function() {
 	wrapper.hide();
 };
 
-jQueryCall(function (jq, $, window) {
+jQueryCall(function ($, window) {
 	"use strict";
-	console.log('[I] Using jquery ' + jQuery().jquery);
+	console.log('[I] Using jquery ' + $().jquery);
 
-	var prev_btn = $('div#gwt-debug-NoteAttributes-trashButton');
+	let prev_btn = $('div#gwt-debug-NoteAttributes-trashButton');
+	//console.log($('div'));
 	//console.log(prev_btn);
 	if (prev_btn.length === 0) {
 		return;
 	}
 
-	getScript("//cdn.bootcss.com/ace/1.2.5/ace.js", function(){
-		getScript("//cdn.bootcss.com/ace/1.2.5/worker-html.js", function(){
+	getScript("//cdn.bootcss.com/ace/1.2.5/ace.js", function () {
+		getScript("//cdn.bootcss.com/ace/1.2.5/worker-html.js", function () {
 			console.log('[I] Runing custom script');
 			// Place the button at the end of the formatting options
 			let prev_btn = $('div#gwt-debug-NoteAttributes-trashButton');
