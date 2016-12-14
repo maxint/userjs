@@ -6,6 +6,8 @@
 // @description Save forms etc.
 // @include     http://abs02/jenkins/job/*/build*
 // @include     http://abs02/jenkins/view/*/job/*/build*
+// @include     http://abs02.arcsoft.com.cn/jenkins/job/*/build*
+// @include     http://abs02.arcsoft.com.cn/jenkins/view/*/job/*/build*
 // @updateURL   https://raw.githubusercontent.com/maxint/userjs/master/ArcSoft_Jenkins/ArcSoft_Jenkins.user.js
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/ArcSoft_Jenkins/ArcSoft_Jenkins.user.js
 // @grant       none
