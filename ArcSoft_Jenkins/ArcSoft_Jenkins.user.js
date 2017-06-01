@@ -1,6 +1,6 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name        ArcSoft Jenkins
-// @version     7
+// @version     8
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description Save forms etc.
@@ -176,6 +176,8 @@
 			var name = this.name;
 			if (name.endsWith('.value')) {
 				name = name.substr(0, name.length-6) + '.' + this.value;
+			} else if ($(this).prev().val() === undefined) {
+				name = this.value;
 			} else {
 				name = $(this).prev().val();
 			}
