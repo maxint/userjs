@@ -1,6 +1,6 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name        ArcSoft Docserver
-// @version     19
+// @version     20
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft office server in http://doc-server
@@ -11,6 +11,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/ArcSoft_Docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v20
+//  - Add support of new project id's.
+//
 // v19
 //  - Multiple-line view for attendance list.
 //
@@ -267,7 +270,7 @@
 
     // check id
     function checkID(id) {
-        return /^\d{4,5}$/.test(id);
+        return /^\d{4,5}-?\d?$/.test(id);
     }
 
     // query id
@@ -471,7 +474,7 @@
             });
         });
     } else if (subpath == '/projectManage/ProjectOther/addRelease.asp') {
-        var proj_id = /\?proj_id=(\d{4,5})/.exec(window.location.href)[1];
+        var proj_id = /\?proj_id=(\d{4,5}-?\d?)/.exec(window.location.href)[1];
         console.log('[I] Open addRelease page with project id: ' + proj_id);
         var istore = new IStorage('addRelease#' + proj_id);
         // copy old data
