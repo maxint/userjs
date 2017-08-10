@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name        ArcSoft Docserver
-// @version     20
+// @version     21
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft office server in http://doc-server
@@ -11,6 +11,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/ArcSoft_Docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v21
+//  - Update post URL when commit "Release".
+//
 // v20
 //  - Add support of new project id's.
 //
@@ -612,9 +615,9 @@
                     console.log('[I] Submitting "' + pkg + '" ...');
                     $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
                     var qstr = jq('#form1').formSerialize();
-                    $.post('/projectManage/Ajax/AjaxSubmitProjectRelease.asp', qstr, function (data) {
-                        if (data != "success")
-                            alert(data);
+                    $.post('/MVCPortal/ProjectManage/ProjectOther/ProjectRelease?IsTest=false', qstr, function (data) {
+                        if (data.msg != "success")
+                            alert(data.msg);
                     });
                 }
                 alert("提交成功");
