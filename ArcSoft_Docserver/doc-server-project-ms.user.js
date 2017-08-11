@@ -1,6 +1,6 @@
-// ==UserScript==
+﻿// ==UserScript==
 // @name        ArcSoft Docserver
-// @version     21
+// @version     22
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft office server in http://doc-server
@@ -11,6 +11,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/ArcSoft_Docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+// v22
+//  - Set different versions for different packages.
+//
 // v21
 //  - Update post URL when commit "Release".
 //
@@ -543,6 +546,26 @@
                 return this;
             };
         };
+        // parse version number
+        var default_version_fmt = '${major}.${minor}.${platform}.${build}';
+        var parseVersionNumber = function(val) {
+            var vers = /(\d+)\.(\d+)\.(\d+)\.(\d+)/g.exec(val);
+            if (vers === null) {
+                vers = /(\d+)\.(\d+)\.(\d+)/g.exec(val);
+                if (vers)
+                    vers.splice(3, '0');
+            }
+            if (vers) {
+                var vstr = istore.get('version.format', default_version_fmt) || '';
+                vstr = vstr.replace('${major}', vers[1]);
+                vstr = vstr.replace('${minor}', vers[2]);
+                vstr = vstr.replace('${platform}', vers[3]);
+                vstr = vstr.replace('${build}', vers[4]);
+                return vstr;
+            } else {
+                return null;
+            }
+        };
         var idmgr = new IDManager(istore);
         if (window.location.search.indexOf('IdentityID=') == -1) {
             // date
@@ -602,6 +625,7 @@
                 for (var i = 0; i < pkgs.length; ++i) {
                     var pkg = pkgs[i];
                     $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
+                    $("input[name='txtVersion']").val(parseVersionNumber(pkg));
                     if (!jq('#form1').valid()) {
                         alert('提交包列表格式不对');
                         return;
@@ -614,6 +638,7 @@
                     var pkg = pkgs[i];
                     console.log('[I] Submitting "' + pkg + '" ...');
                     $('input#txtReleasePath,input#txtDeliveryPackage').val(pkg);
+                    $("input[name='txtVersion']").val(parseVersionNumber(pkg));
                     var qstr = jq('#form1').formSerialize();
                     $.post('/MVCPortal/ProjectManage/ProjectOther/ProjectRelease?IsTest=false', qstr, function (data) {
                         if (data.msg != "success")
@@ -625,21 +650,9 @@
             });
         }
         // update version
-        var default_version_fmt = '${major}.${minor}.${platform}.${build}';
         var pkgInputs = $('#txtDeliveryPackage,#txtDeliveryPackages').change(function () {
-            var val = this.value;
-            var vers = /(\d+)\.(\d+)\.(\d+)\.(\d+)/g.exec(val);
-            if (vers === null) {
-                vers = /(\d+)\.(\d+)\.(\d+)/g.exec(val);
-                if (vers)
-                    vers.splice(3, '0');
-            }
-            if (vers) {
-                var vstr = istore.get('version.format', default_version_fmt) || '';
-                vstr = vstr.replace('${major}', vers[1]);
-                vstr = vstr.replace('${minor}', vers[2]);
-                vstr = vstr.replace('${platform}', vers[3]);
-                vstr = vstr.replace('${build}', vers[4]);
+            var vstr = parseVersionNumber(this.value);
+            if (vstr) {
                 console.log('[I] Current version format: ' + vstr);
                 $("input[name='txtVersion']").val(vstr);
             }
