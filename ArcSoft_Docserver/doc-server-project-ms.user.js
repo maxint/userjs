@@ -1,6 +1,6 @@
 ﻿// ==UserScript==
 // @name        ArcSoft Docserver
-// @version     22
+// @version     23
 // @author      maxint <NOT_SPAM_lnychina@gmail.com>
 // @namespace   http://maxint.github.io
 // @description An enhancement for Arcsoft office server in http://doc-server
@@ -11,6 +11,9 @@
 // @downloadURL https://raw.githubusercontent.com/maxint/userjs/master/ArcSoft_Docserver/doc-server-project-ms.user.js
 // @grant       none
 // @Note
+//
+// v23: Update "D / R" links in project list page.
+//
 // v22
 //  - Set different versions for different packages.
 //
@@ -249,8 +252,14 @@
             let id = $(this).find('td:first a:first').text();
             let rlsUrl = 'http://doc-server/projectManage/ProjectOther/ReleaseList.asp?proj_id=' + id;
             let dlrUrl = 'http://doc-server/projectManage/ProjectDelivery/delivery_phase_plan.asp?keyid=0&status=20&projid=' + id;
-            let link = '<a title="Release" href="' + rlsUrl + '">R</a>';
-            link += ' / <a title="Delivery" href="' + dlrUrl + '">D</a>';
+            if (id.length >= 5 &&  id.match(/^2/g)) {
+                dlrUrl = 'http://doc-server/MVCPortal/ProductManage/ProjectDelivery/ProjectDeliveryList?ProjectID=' + id;
+                rlsUrl = 'http://doc-server/MVCPortal/ProductManage/Project/ReleaseList?ProjectID=' + id;
+            }
+            let link = '';
+            link += '<a title="Delivery" href="' + dlrUrl + '">D</a>';
+            link += ' / '
+            link += '<a title="Release" href="' + rlsUrl + '">R</a>';
             $(this).find('td:nth-child(2)').after('<td>' + link + '</td>');
         });
     }
@@ -372,6 +381,7 @@
 
     // operate w.r.t. sub path
     var subpath = window.location.pathname;
+    console.log('[D] Subpath of URL: ' + subpath);
     if (subpath == '/login.asp') {
         $('input#password').keyup(function (e) {
             if (e.which == 13) {
@@ -860,6 +870,16 @@
         // save all form data
         $('form select#Target').removeAttr('onchange').find('option:last').attr('selected', 'selected');
         console.log('[I] Select the last option and remove onchange event of forms');
+    } else if (subpath == '/MVCPortal/ProductManage/ProjectDelivery/SmallCodingReportEdit') {
+        console.log('[I] Open Submit Coding Report page [new]');
+        let extract_version_and_fill = function(v) {
+        };
+        $('#CodingReport_DeliveryPackage').on('change paste keyup', function() {
+            extract_version_and_fill($(this).val());
+        });
+        $('.fileList').on('click', function() {
+            extract_version_and_fill($(this).text());
+        });
     }
 }, true);
 
